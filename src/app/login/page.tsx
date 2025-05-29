@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
@@ -16,12 +16,19 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { user, loading: authLoading } = useAuth();
 
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push("/resume");
+    }
+  }, [user, authLoading, router]);
+
   if (authLoading) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
+  // This check is now primarily handled by the useEffect, 
+  // but keeping it here prevents rendering the form briefly if user is already logged in.
   if (user) {
-    router.push("/resume");
     return null; 
   }
 
@@ -30,7 +37,7 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({ title: "Login Successful", description: "Welcome back!" });
-      router.push("/resume");
+      // router.push("/resume"); // This will be handled by the useEffect after user state updates
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
