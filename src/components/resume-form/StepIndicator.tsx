@@ -12,8 +12,8 @@ interface StepIndicatorProps {
 export default function StepIndicator({ currentStep, steps }: StepIndicatorProps) {
   return (
     <nav aria-label="Progress">
-      {/* Added overflow-x-auto, py-2 for scrollbar spacing, px-2 for content padding, and justify-start for scrollable content */}
-      <ol role="list" className="flex items-center justify-start md:justify-center space-x-1 sm:space-x-2 md:space-x-4 overflow-x-auto py-2 px-2">
+      {/* Removed md:justify-center to make it always left-aligned */}
+      <ol role="list" className="flex items-center justify-start space-x-1 sm:space-x-2 md:space-x-4 overflow-x-auto py-2 px-2">
         {steps.map((step, stepIdx) => (
           // Added min-w to ensure flex items don't shrink too much. flex-shrink-0 prevents shrinking past content size if not using flex-1.
           // Using flex-1 with min-w allows them to grow but not shrink too small.
