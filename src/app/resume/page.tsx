@@ -1,3 +1,4 @@
+
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import ResumeFormStepper from "@/components/resume-form/ResumeFormStepper";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,7 +35,6 @@ function ProfessionalFormArea() {
   );
 }
 
-
 export default function ResumePage() {
   return (
     <ProtectedRoute>
@@ -47,3 +47,8 @@ export default function ResumePage() {
         {/* Bottom 2/3 Professional Style */}
         <section>
           <ProfessionalFormArea />
+        </section>
+      </div>
+    </ProtectedRoute>
+  );
+}

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -133,4 +134,10 @@ export default function ResumeFormStepper() {
             <Button type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Simpan Resume
-            </Button
+            </Button>
+          )}
+        </div>
+      </form>
+    </FormProvider>
+  );
+}
