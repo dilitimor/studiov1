@@ -11,17 +11,7 @@ export default function HomePage() {
       <ResumeSidebar />
       <main className="w-full md:w-2/3 lg:w-3/4 bg-card">
         <div className="p-4 sm:p-6 md:p-8 h-full overflow-y-auto">
-          <div className="flex flex-col items-center justify-center text-center">
-            <div className="mb-8 mt-8 md:mt-0">
-              <Image 
-                src="https://placehold.co/300x200.png" 
-                alt="ResumeForge Hero Image" 
-                width={300} 
-                height={200} 
-                className="rounded-lg shadow-xl"
-                data-ai-hint="resume design" 
-              />
-            </div>
+          <div className="flex flex-col items-center justify-center text-center py-12">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
               Welcome to <span className="text-primary">ResumeForge</span>
             </h1>
