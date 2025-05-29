@@ -12,7 +12,7 @@ const firebaseConfig = {
   storageBucket: "resume-maker-77f08.firebasestorage.app",
   messagingSenderId: "384144130996",
   appId: "1:384144130996:web:2ec54e12f255ba95e6e8e1",
-  measurementId: "G-WH3TFMHWTD" // Included as per your last snippet
+  measurementId: "G-WH3TFMHWTD"
 };
 
 // Initialize Firebase
