@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useFormContext } from 'react-hook-form';
@@ -34,8 +35,12 @@ export default function BiodataStepForm() {
             <FormItem>
               <FormLabel>Umur</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="Contoh: 25" {...field} 
-                  onChange={event => field.onChange(+event.target.value)}
+                <Input 
+                  type="number" 
+                  placeholder="Contoh: 25" 
+                  {...field} 
+                  onChange={event => field.onChange(event.target.value === '' ? '' : +event.target.value)} // Handle empty string for coercion
+                  value={field.value === undefined ? '' : field.value} // Ensure value is not undefined
                 />
               </FormControl>
               <FormMessage />
@@ -65,7 +70,7 @@ export default function BiodataStepForm() {
             <FormControl>
               <RadioGroup
                 onValueChange={field.onChange}
-                defaultValue={field.value}
+                value={field.value} // Changed from defaultValue to value
                 className="flex flex-col space-y-1 md:flex-row md:space-y-0 md:space-x-4"
               >
                 <FormItem className="flex items-center space-x-3 space-y-0">

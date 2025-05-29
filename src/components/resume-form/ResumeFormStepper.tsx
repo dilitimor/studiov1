@@ -33,7 +33,7 @@ export default function ResumeFormStepper() {
   const methods = useForm<FullResumeValues>({
     resolver: zodResolver(FullResumeSchema), // Full schema for final validation, but steps validate partially
     defaultValues: {
-      biodata: { name: '', address: '', age: undefined, gender: undefined },
+      biodata: { name: '', address: '', age: '', gender: '' }, // Changed age and gender from undefined to ''
       education: [{ institution: '', gpa: '', major: '', skills: '' }],
       experience: [{ company: '', department: '', position: '', tasks: '', year: '', month: '' }],
     },
