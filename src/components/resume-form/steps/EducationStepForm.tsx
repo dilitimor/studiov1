@@ -1,13 +1,17 @@
+
 "use client";
 
-import { useFormContext, useFieldArray } from 'react-hook-form';
+import { useFormContext, useFieldArray, Controller } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import type { FullResumeValues } from '@/lib/schema';
+
+const educationLevels = ["SMA/SMK", "D1", "D2", "D3", "S1/D4", "S2", "S3", "Lainnya"];
 
 export default function EducationStepForm() {
   const { control } = useFormContext<FullResumeValues>();
@@ -24,7 +28,7 @@ export default function EducationStepForm() {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => append({ institution: '', gpa: '', major: '', skills: '' })}
+          onClick={() => append({ level: '', institution: '', major: '', yearRange: '', gpa: '', achievements: '' })}
         >
           <PlusCircle className="mr-2 h-4 w-4" /> Tambah Pendidikan
         </Button>
@@ -39,10 +43,10 @@ export default function EducationStepForm() {
       <div className="space-y-6">
         {fields.map((field, index) => (
           <Card key={field.id} className="relative shadow-md border">
-             <CardHeader>
+            <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle className="text-lg text-foreground/90">Pendidikan #{index + 1}</CardTitle>
-                {fields.length > 1 && (
+                {fields.length > 0 && ( // Show remove button only if there's at least one item
                   <Button
                     type="button"
                     variant="ghost"
@@ -58,12 +62,60 @@ export default function EducationStepForm() {
             <CardContent className="space-y-4">
               <FormField
                 control={control}
+                name={`education.${index}.level`}
+                render={({ field: selectField }) => (
+                  <FormItem>
+                    <FormLabel>Jenjang Pendidikan</FormLabel>
+                    <Select onValueChange={selectField.onChange} defaultValue={selectField.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih jenjang pendidikan" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {educationLevels.map(level => (
+                          <SelectItem key={level} value={level}>{level}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
                 name={`education.${index}.institution`}
                 render={({ field: inputField }) => (
                   <FormItem>
-                    <FormLabel>Nama Lembaga Pendidikan</FormLabel>
+                    <FormLabel>Nama Institusi</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: Universitas Indonesia" {...inputField} />
+                      <Input placeholder="Contoh: Universitas Indonesia, SMKN 1 Bandung" {...inputField} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name={`education.${index}.major`}
+                render={({ field: inputField }) => (
+                  <FormItem>
+                    <FormLabel>Jurusan / Program Studi</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Contoh: Manajemen, Teknik Informatika" {...inputField} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name={`education.${index}.yearRange`}
+                render={({ field: inputField }) => (
+                  <FormItem>
+                    <FormLabel>Tahun Masuk – Lulus</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Contoh: 2018 – 2022" {...inputField} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -75,9 +127,9 @@ export default function EducationStepForm() {
                   name={`education.${index}.gpa`}
                   render={({ field: inputField }) => (
                     <FormItem>
-                      <FormLabel>Nilai/IPK</FormLabel>
+                      <FormLabel>IPK (opsional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Contoh: 3.75 atau Sangat Baik" {...inputField} />
+                        <Input placeholder="Misal: 3.75" {...inputField} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -85,31 +137,18 @@ export default function EducationStepForm() {
                 />
                 <FormField
                   control={control}
-                  name={`education.${index}.major`}
+                  name={`education.${index}.achievements`}
                   render={({ field: inputField }) => (
                     <FormItem>
-                      <FormLabel>Jurusan</FormLabel>
+                      <FormLabel>Prestasi (opsional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Contoh: Teknik Informatika" {...inputField} />
+                        <Textarea placeholder="Contoh: Cum Laude, Juara 1 lomba debat, dll." {...inputField} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-              <FormField
-                control={control}
-                name={`education.${index}.skills`}
-                render={({ field: inputField }) => (
-                  <FormItem>
-                    <FormLabel>Keahlian (pisahkan dengan koma)</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Contoh: Pemrograman Web, Analisis Data, Desain Grafis" {...inputField} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </CardContent>
           </Card>
         ))}
@@ -117,3 +156,5 @@ export default function EducationStepForm() {
     </div>
   );
 }
+
+    

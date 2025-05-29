@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -9,9 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, PlusCircle, Sparkles, Trash2 } from 'lucide-react';
 import type { FullResumeValues } from '@/lib/schema';
-import { polishResumeDescription } from '@/ai/flows/polish-resume'; // Import the AI function
+import { polishResumeDescription } from '@/ai/flows/polish-resume';
 import { useToast } from '@/hooks/use-toast';
-
 
 export default function ExperienceStepForm() {
   const { control, setValue } = useFormContext<FullResumeValues>();
@@ -22,9 +22,8 @@ export default function ExperienceStepForm() {
   const { toast } = useToast();
   const [polishingIndex, setPolishingIndex] = useState<number | null>(null);
 
-
   const handlePolishDescription = async (index: number, currentTasks: string) => {
-    if (!currentTasks.trim()) {
+    if (!currentTasks || !currentTasks.trim()) {
       toast({ title: "Tidak ada teks", description: "Harap isi tugas pekerjaan terlebih dahulu.", variant: "destructive" });
       return;
     }
@@ -48,7 +47,6 @@ export default function ExperienceStepForm() {
     }
   };
 
-
   return (
     <div className="space-y-6 p-2">
       <div className="flex justify-between items-center mb-6">
@@ -57,7 +55,7 @@ export default function ExperienceStepForm() {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => append({ company: '', department: '', position: '', tasks: '', year: '', month: '' })}
+          onClick={() => append({ company: '', position: '', location: '', period: '', tasks: '', achievements: '' })}
         >
           <PlusCircle className="mr-2 h-4 w-4" /> Tambah Pengalaman
         </Button>
@@ -73,9 +71,9 @@ export default function ExperienceStepForm() {
         {fields.map((field, index) => (
           <Card key={field.id} className="relative shadow-md border">
             <CardHeader>
-               <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center">
                 <CardTitle className="text-lg text-foreground/90">Pengalaman #{index + 1}</CardTitle>
-                {fields.length > 1 && (
+                {fields.length > 0 && (
                   <Button
                     type="button"
                     variant="ghost"
@@ -96,7 +94,20 @@ export default function ExperienceStepForm() {
                   <FormItem>
                     <FormLabel>Nama Perusahaan</FormLabel>
                     <FormControl>
-                      <Input placeholder="Contoh: PT. Teknologi Maju" {...inputField} />
+                      <Input placeholder="Contoh: Tokopedia, SGV Consulting" {...inputField} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={control}
+                name={`experience.${index}.position`}
+                render={({ field: inputField }) => (
+                  <FormItem>
+                    <FormLabel>Posisi / Jabatan</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Contoh: Staf Admin, Junior Consultant" {...inputField} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -105,12 +116,12 @@ export default function ExperienceStepForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={control}
-                  name={`experience.${index}.department`}
+                  name={`experience.${index}.location`}
                   render={({ field: inputField }) => (
                     <FormItem>
-                      <FormLabel>Nama Bagian/Departemen</FormLabel>
+                      <FormLabel>Lokasi Kerja</FormLabel>
                       <FormControl>
-                        <Input placeholder="Contoh: Divisi IT" {...inputField} />
+                        <Input placeholder="Contoh: Jakarta, Manila, Bandung" {...inputField} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -118,12 +129,12 @@ export default function ExperienceStepForm() {
                 />
                 <FormField
                   control={control}
-                  name={`experience.${index}.position`}
+                  name={`experience.${index}.period`}
                   render={({ field: inputField }) => (
                     <FormItem>
-                      <FormLabel>Posisi Pekerjaan</FormLabel>
+                      <FormLabel>Periode Kerja</FormLabel>
                       <FormControl>
-                        <Input placeholder="Contoh: Software Engineer Intern" {...inputField} />
+                        <Input placeholder="Contoh: Jan 2021 – Des 2023" {...inputField} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -133,10 +144,10 @@ export default function ExperienceStepForm() {
               <Controller
                 control={control}
                 name={`experience.${index}.tasks`}
-                render={({ field: { onChange, onBlur, value, name, ref }}) => (
+                render={({ field: { onChange, onBlur, value, name, ref } }) => (
                   <FormItem>
-                    <div className="flex justify-between items-center">
-                      <FormLabel>Tugas Pekerjaan</FormLabel>
+                    <div className="flex justify-between items-center mb-1">
+                      <FormLabel>Tugas & Tanggung Jawab</FormLabel>
                       <Button
                         type="button"
                         variant="outline"
@@ -155,7 +166,7 @@ export default function ExperienceStepForm() {
                     </div>
                     <FormControl>
                       <Textarea
-                        placeholder="Jelaskan tugas dan tanggung jawab Anda..."
+                        placeholder="Ringkasan 2–3 kalimat (boleh pakai poin-poin)"
                         name={name}
                         value={value}
                         onChange={onChange}
@@ -168,34 +179,19 @@ export default function ExperienceStepForm() {
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={control}
-                  name={`experience.${index}.year`}
-                  render={({ field: inputField }) => (
-                    <FormItem>
-                      <FormLabel>Tahun (YYYY)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Contoh: 2023" {...inputField} maxLength={4} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={control}
-                  name={`experience.${index}.month`}
-                  render={({ field: inputField }) => (
-                    <FormItem>
-                      <FormLabel>Bulan Bekerja</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Contoh: Januari - Desember atau 6 Bulan" {...inputField} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={control}
+                name={`experience.${index}.achievements`}
+                render={({ field: inputField }) => (
+                  <FormItem>
+                    <FormLabel>Pencapaian (opsional)</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Contoh: Meningkatkan efisiensi 30%, berhasil memimpin proyek X, dll." {...inputField} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
         ))}
@@ -203,3 +199,5 @@ export default function ExperienceStepForm() {
     </div>
   );
 }
+
+    
