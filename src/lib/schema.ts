@@ -22,8 +22,8 @@ export const BiodataSchema = z.object({
   address: z.string().min(1, "Alamat wajib diisi"),
   contactNumber: z.string().min(1, "Nomor Kontak wajib diisi").regex(/^[0-9+ -]+$/, "Format Nomor Kontak tidak valid"),
   birthPlaceDate: z.string().min(1, "Tempat & Tanggal Lahir wajib diisi"),
-  gender: z.enum(["Laki-laki", "Perempuan", "Lainnya"], { required_error: "Gender wajib dipilih" }),
-  photoUrl: z.string().url("URL foto tidak valid").optional().or(z.literal('')),
+  gender: z.enum(["Laki-laki", "Perempuan"], { required_error: "Gender wajib dipilih" }),
+  photoUrl: z.string().optional().or(z.literal('')), // Will store data URI or be empty
 });
 export type BiodataValues = z.infer<typeof BiodataSchema>;
 
