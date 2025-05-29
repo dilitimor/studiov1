@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { FullResumeValues, BiodataValues, EducationEntryValues, ExperienceEntryValues } from '@/lib/schema';
+import type { FullResumeValues } from '@/lib/schema';
 import { FullResumeSchema } from '@/lib/schema';
 
 import BiodataStepForm from './steps/BiodataStepForm';
@@ -33,7 +33,7 @@ export default function ResumeFormStepper() {
   const methods = useForm<FullResumeValues>({
     resolver: zodResolver(FullResumeSchema), // Full schema for final validation, but steps validate partially
     defaultValues: {
-      biodata: { name: '', address: '', age: '', gender: '' }, // Changed age and gender from undefined to ''
+      biodata: { name: '', address: '', age: '', gender: '' },
       education: [{ institution: '', gpa: '', major: '', skills: '' }],
       experience: [{ company: '', department: '', position: '', tasks: '', year: '', month: '' }],
     },
@@ -80,7 +80,6 @@ export default function ResumeFormStepper() {
     }
 
     try {
-      // Store the resume data in Firestore
       const resumeDocRef = doc(db, `users/${currentUser.uid}/resumes`, `resume_${Date.now()}`);
       await setDoc(resumeDocRef, {
         ...data,
@@ -93,14 +92,14 @@ export default function ResumeFormStepper() {
         title: 'Resume Disimpan!',
         description: 'Resume Anda telah berhasil disimpan.',
       });
-      // Potentially reset form or navigate to a success page/dashboard
-      // methods.reset();
-      // setCurrentStep(1); // Or navigate
-    } catch (error) {
+      methods.reset(); // Reset form fields
+      setCurrentStep(1); // Navigate to the first step
+    } catch (error: any) {
       console.error('Error saving resume:', error);
+      const errorMessage = error.message || 'Terjadi kesalahan saat menyimpan resume Anda. Silakan coba lagi.';
       toast({
         title: 'Gagal Menyimpan Resume',
-        description: 'Terjadi kesalahan saat menyimpan resume Anda. Silakan coba lagi.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
