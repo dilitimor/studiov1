@@ -48,7 +48,7 @@ export default function ResumeFormStepper() {
       biodata: { name: '', address: '', contactNumber: '', birthPlaceDate: '', gender: '', photoUrl: '' },
       shortProfile: { background: '', strengths: '', careerGoals: '', teamValue: '' },
       education: [{ level: '', institution: '', major: '', yearRange: '', gpa: '', achievements: '' }],
-      experience: [], // Optional, start empty
+      experience: [], 
       skills: { hasSkills: false, mainSkills: '', foreignLanguages: '' },
       hobbies: { hasHobbies: false, hobbiesList: '' },
       references: { hasReferences: false, entries: [] },
@@ -63,7 +63,7 @@ export default function ResumeFormStepper() {
     
     if (currentStepConfig && currentStepConfig.fields) {
       isValid = await trigger(currentStepConfig.fields as any);
-    } else if (currentStep < steps.length) { // For steps without specific fields before summary
+    } else if (currentStep < steps.length) { 
       isValid = true;
     }
 
@@ -83,7 +83,7 @@ export default function ResumeFormStepper() {
 
   const handlePrev = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep(prev => prev - 1); // Corrected to prev - 1
     }
   };
 
@@ -97,7 +97,6 @@ export default function ResumeFormStepper() {
     }
 
     try {
-      // Filter out optional empty arrays before saving
       const dataToSave = {
         ...data,
         experience: data.experience?.length ? data.experience : [],
@@ -135,7 +134,7 @@ export default function ResumeFormStepper() {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 w-full">
         <StepIndicator currentStep={currentStep} steps={steps} />
 
         <div className="min-h-[400px]"> {/* Ensure consistent height for steps */}
@@ -169,5 +168,4 @@ export default function ResumeFormStepper() {
     </FormProvider>
   );
 }
-
     
