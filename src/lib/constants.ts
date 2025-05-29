@@ -10,4 +10,5 @@ export const ADMIN_NAV_LINKS = [
   { href: '/admin/content/tentang-kami', label: 'Tentang Kami' },
   { href: '/admin/content/blog', label: 'Blog' },
   { href: '/admin/content/bantuan', label: 'Bantuan' },
-  { href: '/admin/content/footer', label: '
+  { href: '/admin/content/footer', label: 'Footer' },
+];
