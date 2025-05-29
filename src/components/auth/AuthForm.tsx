@@ -88,3 +88,5 @@ export default function AuthForm({ mode, onSubmit, loading }: AuthFormProps) {
         </Form>
       </CardContent>
     </Card>
+  );
+}
