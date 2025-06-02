@@ -7,15 +7,16 @@ import { cn } from "@/lib/utils";
 import { ADMIN_NAV_LINKS } from "@/lib/constants";
 import SiteLogo from "@/components/layout/SiteLogo";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { LayoutDashboard, Image as ImageIcon, FileText, Newspaper, HelpCircle, Dock } from "lucide-react"; 
+import { LayoutDashboard, Image as ImageIcon, FileText, Newspaper, HelpCircle, Dock, Sparkles } from "lucide-react"; 
 
 const iconMap: { [key: string]: React.ElementType } = {
   '/admin/dashboard': LayoutDashboard,
   '/admin/logo': ImageIcon,
   '/admin/content/tentang-kami': FileText,
-  '/admin/content/blog': Newspaper, // Using Newspaper for blog
+  '/admin/content/blog': Newspaper,
   '/admin/content/bantuan': HelpCircle,
-  '/admin/content/footer': Dock, // Using Dock for Footer
+  '/admin/content/footer': Dock,
+  '/admin/ai-templates': Sparkles, // Added icon for AI Templates
 };
 
 
@@ -30,15 +31,14 @@ export default function AdminNav() {
       <ScrollArea className="flex-1">
         <nav className="p-4 space-y-2">
           {ADMIN_NAV_LINKS.map((link) => {
-            const IconComponent = iconMap[link.href] || FileText; // Default to FileText if no specific icon
+            const IconComponent = iconMap[link.href] || FileText; 
             return (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
                 "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                // More specific matching for nested routes like blog/edit/[id]
-                pathname === link.href || (pathname.startsWith(link.href + '/') && link.href !== '/admin/dashboard')
+                pathname === link.href || (pathname.startsWith(link.href + '/') && link.href !== '/admin/dashboard' && !pathname.startsWith('/admin/content/blog/edit') && !pathname.startsWith('/admin/ai-templates/edit') ) || (pathname.startsWith('/admin/content/blog/edit') && link.href === '/admin/content/blog') || (pathname.startsWith('/admin/ai-templates/edit') && link.href === '/admin/ai-templates')
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}

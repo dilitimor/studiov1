@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, FileText, Users, Settings, Newspaper, HelpCircle, Dock, Image as ImageIconLucide } from "lucide-react"; // Added Newspaper, HelpCircle, Dock, ImageIconLucide
+import { BarChart, FileText, Users, Settings, Newspaper, HelpCircle, Dock, Image as ImageIconLucide, Sparkles } from "lucide-react"; // Added Sparkles
 import Link from "next/link";
 
 export default function AdminDashboardPage() {
@@ -73,6 +73,11 @@ export default function AdminDashboardPage() {
              <Dock className="h-6 w-6 mb-2 text-primary" />
             <h3 className="font-semibold">Manage Footer</h3>
             <p className="text-xs text-muted-foreground">Update footer content.</p>
+          </Link>
+          <Link href="/admin/ai-templates" className="block p-4 bg-muted/50 hover:bg-muted rounded-lg transition-colors">
+             <Sparkles className="h-6 w-6 mb-2 text-primary" />
+            <h3 className="font-semibold">AI Templates</h3>
+            <p className="text-xs text-muted-foreground">Manage AI resume templates.</p>
           </Link>
         </CardContent>
       </Card>
