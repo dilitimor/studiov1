@@ -36,7 +36,7 @@ export const ShortProfileSchema = z.object({
 export type ShortProfileValues = z.infer<typeof ShortProfileSchema>;
 
 export const EducationEntrySchema = z.object({
-  id: z.string().optional(),
+  id: z.string().optional(), // for useFieldArray
   level: z.string().min(1, "Jenjang Pendidikan wajib diisi"),
   institution: z.string().min(1, "Nama Institusi wajib diisi"),
   major: z.string().min(1, "Jurusan / Program Studi wajib diisi"),
@@ -47,7 +47,7 @@ export const EducationEntrySchema = z.object({
 export type EducationEntryValues = z.infer<typeof EducationEntrySchema>;
 
 export const ExperienceEntrySchema = z.object({
-  id: z.string().optional(),
+  id: z.string().optional(), // for useFieldArray
   company: z.string().min(1, "Nama Perusahaan wajib diisi"),
   position: z.string().min(1, "Posisi / Jabatan wajib diisi"),
   location: z.string().min(1, "Lokasi Kerja wajib diisi"),
@@ -59,7 +59,7 @@ export type ExperienceEntryValues = z.infer<typeof ExperienceEntrySchema>;
 
 export const SkillsSchema = z.object({
   hasSkills: z.boolean().default(false),
-  mainSkills: z.string().optional(), 
+  mainSkills: z.string().optional(),
   foreignLanguages: z.string().optional(),
 }).refine(data => {
   if (data.hasSkills) {
@@ -87,7 +87,7 @@ export const HobbiesSchema = z.object({
 export type HobbiesValues = z.infer<typeof HobbiesSchema>;
 
 export const ReferenceEntrySchema = z.object({
-  id: z.string().optional(),
+  id: z.string().optional(), // for useFieldArray
   fullName: z.string().min(1, "Nama Lengkap wajib diisi"),
   position: z.string().min(1, "Posisi / Jabatan wajib diisi"),
   company: z.string().min(1, "Nama Perusahaan / Institusi wajib diisi"),
@@ -113,6 +113,8 @@ export type ReferencesValues = z.infer<typeof ReferencesSchema>;
 
 
 export const FullResumeSchema = z.object({
+  // id: z.string().optional(), // Firestore document ID, not part of form values usually but useful if pre-loading
+  userId: z.string().optional(), // To associate with a user
   targetPosition: TargetPositionSchema,
   biodata: BiodataSchema,
   shortProfile: ShortProfileSchema,
@@ -121,8 +123,14 @@ export const FullResumeSchema = z.object({
   skills: SkillsSchema,
   hobbies: HobbiesSchema,
   references: ReferencesSchema,
+  createdAt: z.any().optional(), // Firestore ServerTimestamp
+  updatedAt: z.any().optional(), // Firestore ServerTimestamp
 });
 export type FullResumeValues = z.infer<typeof FullResumeSchema>;
+
+export interface ResumeDocument extends FullResumeValues {
+  id: string; // Firestore document ID
+}
 
 
 // CMS Schemas
@@ -131,10 +139,9 @@ export const LogoSchema = z.object({
 });
 export type LogoValues = z.infer<typeof LogoSchema>;
 
-// Used for Tentang Kami
 export const AboutUsContentSchema = z.object({
   title: z.string().min(1, "Judul tidak boleh kosong"),
-  content: z.string().min(1, "Konten tidak boleh kosong"), 
+  content: z.string().min(1, "Konten tidak boleh kosong"),
   imageUrl: z.string().url("URL gambar tidak valid").or(z.literal("")).optional(),
   imageAlt: z.string().optional(),
   dataAiHint: z.string().max(40, "Petunjuk AI maksimal 2 kata, dipisah spasi").optional(),
@@ -142,7 +149,6 @@ export const AboutUsContentSchema = z.object({
 export type AboutUsContentValues = z.infer<typeof AboutUsContentSchema>;
 
 
-// Schema for Bantuan (Help/FAQ) page content including contact details
 export const BantuanContentSchema = z.object({
   mainTitle: z.string().min(1, "Judul utama tidak boleh kosong.").default("Pusat Bantuan ResumeForge"),
   introText: z.string().min(1, "Teks perkenalan tidak boleh kosong.").default("Kami siap membantu Anda! Temukan jawaban atas pertanyaan umum di bawah ini, atau hubungi kami jika Anda memerlukan bantuan lebih lanjut."),
@@ -161,19 +167,39 @@ export type BantuanContentValues = z.infer<typeof BantuanContentSchema>;
 
 
 export const BlogPostSchema = z.object({
-  id: z.string().optional(), 
+  id: z.string().optional(),
   title: z.string().min(1, "Judul wajib diisi"),
   slug: z.string().min(1, "Slug wajib diisi").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Format slug tidak valid (gunakan huruf kecil, angka, dan tanda hubung)"),
-  content: z.string().min(1, "Konten wajib diisi"), // Rich text/Markdown content
+  content: z.string().min(1, "Konten wajib diisi"),
   imageUrl: z.string().url("URL gambar tidak valid").or(z.literal("")).optional(),
   imageAlt: z.string().optional(),
   dataAiHint: z.string().max(40, "Petunjuk AI maksimal 2 kata, dipisah spasi").optional(),
-  date: z.string().optional(), // Stored as YYYY-MM-DD string
+  date: z.string().optional(),
 });
 export type BlogPostValues = z.infer<typeof BlogPostSchema>;
+export interface BlogPostDocument extends BlogPostValues {
+  id: string; 
+  createdAt?: any;
+  updatedAt?: any;
+}
 
 export const FooterContentSchema = z.object({
   text: z.string().min(1, "Teks footer tidak boleh kosong"),
 });
 export type FooterContentValues = z.infer<typeof FooterContentSchema>;
+
+// Schema for AI Resume Templates (Admin)
+export const AiResumeTemplateSchema = z.object({
+  id: z.string().optional(), // Firestore document ID
+  name: z.string().min(1, "Nama template wajib diisi"),
+  description: z.string().min(1, "Deskripsi template wajib diisi"),
+  // Storing content as string for now. Could be URL or structured data later.
+  content: z.string().min(1, "Konten template (atau URL) wajib diisi"),
+  createdAt: z.any().optional(),
+  updatedAt: z.any().optional(),
+});
+export type AiResumeTemplateValues = z.infer<typeof AiResumeTemplateSchema>;
+export interface AiResumeTemplateDocument extends AiResumeTemplateValues {
+  id: string;
+}
     

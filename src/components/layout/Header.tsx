@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -15,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, UserCircle } from 'lucide-react';
+import { LogOut, UserCircle, FileText } from 'lucide-react'; // Added FileText for My Resumes
 
 export default function Header() {
   const pathname = usePathname();
@@ -31,17 +32,22 @@ export default function Header() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <SiteLogo />
         <nav className="hidden md:flex items-center space-x-6">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                pathname === link.href ? 'text-primary' : 'text-muted-foreground'
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map((link) => {
+            if (link.requiresAuth && !user && !loading) {
+              return null; // Don't show auth-required links if not logged in
+            }
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  pathname === link.href ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
         <div className="flex items-center space-x-3">
           {loading ? (
@@ -68,7 +74,13 @@ export default function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {user.email === 'admin@example.com' && ( // Simple admin check
+                <DropdownMenuItem asChild>
+                  <Link href="/my-resumes">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Resume Saya
+                  </Link>
+                </DropdownMenuItem>
+                {user.email === 'admin@example.com' && (
                    <DropdownMenuItem asChild>
                      <Link href="/admin/dashboard">
                        <UserCircle className="mr-2 h-4 w-4" />
@@ -76,6 +88,7 @@ export default function Header() {
                      </Link>
                    </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Log out
@@ -97,3 +110,4 @@ export default function Header() {
     </header>
   );
 }
+    
