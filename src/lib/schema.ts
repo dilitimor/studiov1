@@ -131,18 +131,13 @@ export const LogoSchema = z.object({
 });
 export type LogoValues = z.infer<typeof LogoSchema>;
 
-export const TextContentSchema = z.object({
-  content: z.string().min(1, "Konten tidak boleh kosong"),
-});
-export type TextContentValues = z.infer<typeof TextContentSchema>;
-
 // Used for Tentang Kami
 export const AboutUsContentSchema = z.object({
   title: z.string().min(1, "Judul tidak boleh kosong"),
-  content: z.string().min(1, "Konten tidak boleh kosong"), // Storing paragraphs as a single Markdown string
+  content: z.string().min(1, "Konten tidak boleh kosong"), 
   imageUrl: z.string().url("URL gambar tidak valid").or(z.literal("")).optional(),
   imageAlt: z.string().optional(),
-  dataAiHint: z.string().optional(),
+  dataAiHint: z.string().max(40, "Petunjuk AI maksimal 2 kata, dipisah spasi").optional(),
 });
 export type AboutUsContentValues = z.infer<typeof AboutUsContentSchema>;
 
@@ -166,14 +161,14 @@ export type BantuanContentValues = z.infer<typeof BantuanContentSchema>;
 
 
 export const BlogPostSchema = z.object({
-  id: z.string().optional(), // for client-side tracking, Firestore ID will be separate
+  id: z.string().optional(), 
   title: z.string().min(1, "Judul wajib diisi"),
   slug: z.string().min(1, "Slug wajib diisi").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Format slug tidak valid (gunakan huruf kecil, angka, dan tanda hubung)"),
-  content: z.string().min(1, "Konten wajib diisi"),
+  content: z.string().min(1, "Konten wajib diisi"), // Rich text/Markdown content
   imageUrl: z.string().url("URL gambar tidak valid").or(z.literal("")).optional(),
   imageAlt: z.string().optional(),
-  dataAiHint: z.string().optional(),
-  date: z.string().optional(), // Will be set on server/client during creation/update
+  dataAiHint: z.string().max(40, "Petunjuk AI maksimal 2 kata, dipisah spasi").optional(),
+  date: z.string().optional(), // Stored as YYYY-MM-DD string
 });
 export type BlogPostValues = z.infer<typeof BlogPostSchema>;
 
@@ -181,5 +176,4 @@ export const FooterContentSchema = z.object({
   text: z.string().min(1, "Teks footer tidak boleh kosong"),
 });
 export type FooterContentValues = z.infer<typeof FooterContentSchema>;
-
     

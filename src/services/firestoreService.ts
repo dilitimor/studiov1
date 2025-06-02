@@ -1,7 +1,7 @@
 
 import { db } from '@/config/firebase';
-import { doc, getDoc, setDoc, collection, getDocs, deleteDoc, serverTimestamp, updateDoc, query, orderBy, where, limit } from 'firebase/firestore';
-import type { LogoValues, TextContentValues, BlogPostValues, FooterContentValues, AboutUsContentValues, BantuanContentValues } from '@/lib/schema';
+import { doc, getDoc, setDoc, collection, getDocs, deleteDoc, serverTimestamp, updateDoc, query, orderBy, where, limit, addDoc } from 'firebase/firestore';
+import type { LogoValues, BlogPostValues, FooterContentValues, AboutUsContentValues, BantuanContentValues } from '@/lib/schema';
 
 const CMS_COLLECTION = 'cms_content';
 const BLOG_POSTS_COLLECTION = 'blog_posts';
@@ -40,15 +40,18 @@ export const updateFooterContent = (data: FooterContentValues) => setCmsDoc<Foot
 
 // Blog Posts
 export interface BlogPostDocument extends BlogPostValues {
-  id: string;
+  id: string; // Firestore document ID
   createdAt?: any; 
   updatedAt?: any; 
 }
 
 export async function getBlogPosts(): Promise<BlogPostDocument[]> {
-  const q = query(collection(db, BLOG_POSTS_COLLECTION), orderBy('createdAt', 'desc'));
+  const q = query(collection(db, BLOG_POSTS_COLLECTION), orderBy('date', 'desc'));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as BlogPostDocument));
+  return querySnapshot.docs.map(docSnap => ({ 
+    id: docSnap.id, 
+    ...docSnap.data() 
+  } as BlogPostDocument));
 }
 
 export async function getBlogPost(id: string): Promise<BlogPostDocument | null> {
@@ -72,24 +75,28 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPostDocument 
 
 
 export async function addBlogPost(data: BlogPostValues): Promise<string> {
-  const { id, ...postData } = data; // remove client-side id if present
-  const docRef = doc(collection(db, BLOG_POSTS_COLLECTION)); 
-  await setDoc(docRef, { 
-    ...postData, 
+  // Ensure client-side id is not passed to Firestore if present from form
+  const { id: RHFId, ...postData } = data; 
+  
+  const newPostData = {
+    ...postData,
     date: new Date().toISOString().split('T')[0], // Set current date in YYYY-MM-DD
-    createdAt: serverTimestamp(), 
-    updatedAt: serverTimestamp() 
-  });
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+  const docRef = await addDoc(collection(db, BLOG_POSTS_COLLECTION), newPostData);
   return docRef.id;
 }
 
 export async function updateBlogPost(id: string, data: Partial<BlogPostValues>): Promise<void> {
-  const { id: dataId, ...postData } = data; // remove client-side id if present
+  // Ensure client-side id is not passed to Firestore if present from form
+  const { id: RHFId, ...postData } = data;
+  
   const docRef = doc(db, BLOG_POSTS_COLLECTION, id);
-  await updateDoc(docRef, { 
-    ...postData, 
-    date: new Date().toISOString().split('T')[0], // Update date on edit
-    updatedAt: serverTimestamp() 
+  await updateDoc(docRef, {
+    ...postData,
+    date: postData.date || new Date().toISOString().split('T')[0], // Keep existing or update
+    updatedAt: serverTimestamp(),
   });
 }
 
@@ -98,8 +105,11 @@ export async function deleteBlogPost(id: string): Promise<void> {
   await deleteDoc(docRef);
 }
 
-export async function getAllBlogSlugs(): Promise<string[]> {
-  const q = query(collection(db, BLOG_POSTS_COLLECTION), orderBy('createdAt', 'desc'));
+export async function getAllBlogSlugs(): Promise<Array<{ slug: string }>> {
+  const q = query(collection(db, BLOG_POSTS_COLLECTION), orderBy('date', 'desc'));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(docSnap => (docSnap.data() as BlogPostValues).slug);
+  return querySnapshot.docs.map(docSnap => ({
+    slug: (docSnap.data() as BlogPostValues).slug,
+  }));
 }
+

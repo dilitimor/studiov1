@@ -1,33 +1,37 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { getBlogPostBySlug, getAllBlogSlugs, type BlogPostDocument } from "@/services/firestoreService";
+import { notFound } from "next/navigation";
 
-// TODO: Fetch blog post by slug from CMS
-const fetchBlogPostBySlug = async (slug: string) => {
-  // Simulate fetching data
-  await new Promise(resolve => setTimeout(resolve, 100));
-  const posts = [
-    { slug: "tips-menulis-resume-ats-friendly", title: "5 Tips Menulis Resume ATS-Friendly", content: "<p>Ini adalah konten lengkap tentang tips menulis resume ATS-friendly...</p><p>Pastikan menggunakan kata kunci yang relevan...</p>", date: "2024-07-28", imageUrl: "https://placehold.co/800x400.png", imageAlt: "Resume ATS", dataAiHint: "resume computer" },
-    { slug: "kesalahan-umum-dalam-resume", title: "Hindari Kesalahan Umum Ini Dalam Resume Anda", content: "<p>Konten tentang kesalahan umum dalam resume...</p>", date: "2024-07-25", imageUrl: "https://placehold.co/800x400.png", imageAlt: "Resume mistakes", dataAiHint: "document error" },
-    { slug: "maksimalkan-pengalaman-magang", title: "Cara Memaksimalkan Pengalaman Magang di Resume", content: "<p>Konten tentang memaksimalkan pengalaman magang...</p>", date: "2024-07-22", imageUrl: "https://placehold.co/800x400.png", imageAlt: "Internship experience", dataAiHint: "office intern" },
-  ];
-  return posts.find(p => p.slug === slug) || null;
-};
+async function fetchBlogPost(slug: string): Promise<BlogPostDocument | null> {
+  try {
+    const post = await getBlogPostBySlug(slug);
+    return post;
+  } catch (error) {
+    console.error(`Failed to fetch blog post with slug ${slug}:`, error);
+    return null;
+  }
+}
+
+export async function generateStaticParams() {
+  try {
+    const slugs = await getAllBlogSlugs();
+    return slugs.map(item => ({ slug: item.slug }));
+  } catch (error) {
+    console.error("Failed to generate static params for blog posts:", error);
+    return [];
+  }
+}
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = await fetchBlogPostBySlug(params.slug);
+  const post = await fetchBlogPost(params.slug);
 
   if (!post) {
-    return (
-      <div className="text-center py-12">
-        <h1 className="text-2xl font-bold">Post not found</h1>
-        <Button asChild variant="link" className="mt-4">
-          <Link href="/blog">Back to Blog</Link>
-        </Button>
-      </div>
-    );
+    notFound(); // Triggers the not-found page
   }
 
   return (
@@ -39,33 +43,29 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         </Link>
       </Button>
       <Card className="shadow-lg overflow-hidden">
-        <CardHeader className="p-0">
-           <Image 
-            src={post.imageUrl} 
-            alt={post.imageAlt} 
-            width={800} 
-            height={400} 
-            className="object-cover w-full h-64 md:h-96"
-            data-ai-hint={post.dataAiHint}
-          />
-        </CardHeader>
+        {post.imageUrl && (
+          <CardHeader className="p-0">
+            <Image 
+              src={post.imageUrl} 
+              alt={post.imageAlt || post.title} 
+              width={800} 
+              height={400} 
+              className="object-cover w-full h-64 md:h-96"
+              data-ai-hint={post.dataAiHint || "blog image"}
+            />
+          </CardHeader>
+        )}
         <CardContent className="p-6 md:p-8">
           <CardTitle className="text-3xl md:text-4xl font-bold mb-4 text-primary">{post.title}</CardTitle>
           <CardDescription className="text-sm text-muted-foreground mb-6">
-            Published on {new Date(post.date).toLocaleDateString()}
+            Published on {new Date(post.date || post.createdAt || Date.now()).toLocaleDateString()}
           </CardDescription>
           <div 
             className="prose prose-lg max-w-none dark:prose-invert prose-headings:text-primary"
-            dangerouslySetInnerHTML={{ __html: post.content }} 
+            dangerouslySetInnerHTML={{ __html: post.content }} // Assuming content is HTML
           />
         </CardContent>
       </Card>
     </div>
   );
 }
-
-// Optional: Generate static paths if you have a known list of slugs
-// export async function generateStaticParams() {
-//   // TODO: Fetch all slugs from CMS
-//   const slugs = ["tips-menulis-resume-ats-friendly", "kesalahan-umum-dalam-resume", "maksimalkan-pengalaman-magang"];
-//   return slugs.map(slug => ({ slug
