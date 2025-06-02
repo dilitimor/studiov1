@@ -26,8 +26,6 @@ export default function LoginPage() {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
-  // This check is now primarily handled by the useEffect, 
-  // but keeping it here prevents rendering the form briefly if user is already logged in.
   if (user) {
     return null; 
   }
@@ -40,9 +38,24 @@ export default function LoginPage() {
       // router.push("/resume"); // This will be handled by the useEffect after user state updates
     } catch (error: any) {
       console.error("Login error:", error);
+      let description = "An unexpected error occurred. Please try again.";
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        description = "Invalid email or password. Please check your credentials and try again.";
+      } else if (error.code === 'auth/invalid-email') {
+        description = "The email address is not valid. Please check the format.";
+      } else if (error.code === 'auth/user-disabled') {
+        description = "This user account has been disabled.";
+      } else if (error.message) {
+        // Fallback to Firebase's message if it's something else, 
+        // or provide a generic one if error.message is also not helpful.
+        description = error.message.includes("auth/invalid-credential") 
+            ? "Invalid email or password. Please check your credentials and try again."
+            : error.message;
+      }
+      
       toast({
         title: "Login Failed",
-        description: error.message || "Please check your credentials and try again.",
+        description: description,
         variant: "destructive",
       });
     } finally {
