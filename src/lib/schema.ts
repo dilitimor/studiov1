@@ -23,7 +23,7 @@ export const BiodataSchema = z.object({
   contactNumber: z.string().min(1, "Nomor Kontak wajib diisi").regex(/^[0-9+ -]+$/, "Format Nomor Kontak tidak valid"),
   birthPlaceDate: z.string().min(1, "Tempat & Tanggal Lahir wajib diisi"),
   gender: z.enum(["Laki-laki", "Perempuan"], { required_error: "Gender wajib dipilih" }),
-  photoUrl: z.string().optional().or(z.literal('')), // Will store data URI or be empty
+  photoUrl: z.string().optional().or(z.literal('')),
 });
 export type BiodataValues = z.infer<typeof BiodataSchema>;
 
@@ -59,8 +59,8 @@ export type ExperienceEntryValues = z.infer<typeof ExperienceEntrySchema>;
 
 export const SkillsSchema = z.object({
   hasSkills: z.boolean().default(false),
-  mainSkills: z.string().optional(), // Comma-separated
-  foreignLanguages: z.string().optional(), // Comma-separated
+  mainSkills: z.string().optional(), 
+  foreignLanguages: z.string().optional(),
 }).refine(data => {
   if (data.hasSkills) {
     return !!data.mainSkills && data.mainSkills.trim() !== '';
@@ -74,7 +74,7 @@ export type SkillsValues = z.infer<typeof SkillsSchema>;
 
 export const HobbiesSchema = z.object({
   hasHobbies: z.boolean().default(false),
-  hobbiesList: z.string().optional(), // Comma-separated
+  hobbiesList: z.string().optional(),
 }).refine(data => {
   if (data.hasHobbies) {
     return !!data.hobbiesList && data.hobbiesList.trim() !== '';
@@ -136,13 +136,44 @@ export const TextContentSchema = z.object({
 });
 export type TextContentValues = z.infer<typeof TextContentSchema>;
 
-export const BlogPostSchema = z.object({
-  title: z.string().min(1, "Judul wajib diisi"),
-  slug: z.string().min(1, "Slug wajib diisi").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Format slug tidak valid"),
-  content: z.string().min(1, "Konten wajib diisi"),
-  imageUrl: z.string().url("URL gambar tidak valid").or(z.literal("")),
+// Used for Tentang Kami
+export const AboutUsContentSchema = z.object({
+  title: z.string().min(1, "Judul tidak boleh kosong"),
+  content: z.string().min(1, "Konten tidak boleh kosong"), // Storing paragraphs as a single Markdown string
+  imageUrl: z.string().url("URL gambar tidak valid").or(z.literal("")).optional(),
   imageAlt: z.string().optional(),
   dataAiHint: z.string().optional(),
+});
+export type AboutUsContentValues = z.infer<typeof AboutUsContentSchema>;
+
+
+// Schema for Bantuan (Help/FAQ) page content including contact details
+export const BantuanContentSchema = z.object({
+  mainTitle: z.string().min(1, "Judul utama tidak boleh kosong.").default("Pusat Bantuan ResumeForge"),
+  introText: z.string().min(1, "Teks perkenalan tidak boleh kosong.").default("Kami siap membantu Anda! Temukan jawaban atas pertanyaan umum di bawah ini, atau hubungi kami jika Anda memerlukan bantuan lebih lanjut."),
+  faqTitle: z.string().min(1, "Judul FAQ tidak boleh kosong.").default("Pertanyaan Umum (FAQ)"),
+  faqs: z.array(z.object({
+    question: z.string().min(1, "Pertanyaan tidak boleh kosong"),
+    answer: z.string().min(1, "Jawaban tidak boleh kosong"),
+  })).min(1, "Minimal satu FAQ harus ada."),
+  contactTitle: z.string().min(1, "Judul Kontak tidak boleh kosong.").default("Hubungi Kami"),
+  contactIntroText: z.string().min(1, "Teks perkenalan kontak tidak boleh kosong.").default("Jika Anda tidak menemukan jawaban yang Anda cari, jangan ragu untuk menghubungi tim dukungan kami:"),
+  contactEmail: z.string().email("Format email tidak valid.").optional().or(z.literal("")),
+  contactPhone: z.string().optional().or(z.literal("")),
+  contactHours: z.string().optional().or(z.literal("")).default("(Jam Kerja)"),
+});
+export type BantuanContentValues = z.infer<typeof BantuanContentSchema>;
+
+
+export const BlogPostSchema = z.object({
+  id: z.string().optional(), // for client-side tracking, Firestore ID will be separate
+  title: z.string().min(1, "Judul wajib diisi"),
+  slug: z.string().min(1, "Slug wajib diisi").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Format slug tidak valid (gunakan huruf kecil, angka, dan tanda hubung)"),
+  content: z.string().min(1, "Konten wajib diisi"),
+  imageUrl: z.string().url("URL gambar tidak valid").or(z.literal("")).optional(),
+  imageAlt: z.string().optional(),
+  dataAiHint: z.string().optional(),
+  date: z.string().optional(), // Will be set on server/client during creation/update
 });
 export type BlogPostValues = z.infer<typeof BlogPostSchema>;
 

@@ -2,28 +2,51 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-
-// TODO: Make footer content dynamic from CMS
+import { getFooterContent } from '@/services/firestoreService';
+import type { FooterContentValues } from '@/lib/schema';
 
 export default function Footer() {
-  const [currentYear, setCurrentYear] = useState<number | null>(null);
+  const [footerText, setFooterText] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // This effect runs only on the client, after the component has mounted
-    setCurrentYear(new Date().getFullYear());
-  }, []); // Empty dependency array ensures this runs once on mount
+    async function fetchFooter() {
+      try {
+        const data = await getFooterContent();
+        if (data && data.text) {
+          setFooterText(data.text);
+        } else {
+          // Fallback if no data is found or text is empty
+          setFooterText(`© ${new Date().getFullYear()} ResumeForge. All rights reserved.`);
+        }
+      } catch (error) {
+        console.error("Failed to fetch footer content:", error);
+        // Fallback on error
+        setFooterText(`© ${new Date().getFullYear()} ResumeForge. All rights reserved.`);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchFooter();
+  }, []);
+
+  // To avoid hydration mismatch, render a placeholder or nothing until client-side fetch completes
+  if (isLoading) {
+    // You can return a minimal placeholder or null
+    // Returning null might cause layout shifts, a simple placeholder is often better
+    return (
+      <footer className="border-t bg-background">
+        <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
+          &nbsp; {/* Non-breaking space or a simple loading indicator */}
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer className="border-t bg-background">
       <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-        {/* 
-          On the server, currentYear is null, so the fallback is rendered.
-          On the client, currentYear is initially null, so the fallback is rendered (matching the server).
-          After mount, useEffect updates currentYear, and the client re-renders with the dynamic year.
-        */}
-        {currentYear !== null
-          ? `© ${currentYear} ResumeForge. All rights reserved.`
-          : `© ResumeForge. All rights reserved.`}
+        {footerText}
       </div>
     </footer>
   );
