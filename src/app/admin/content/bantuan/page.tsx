@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { Loader2, HelpCircle, PlusCircle, Trash2 } from "lucide-react";
 import { BantuanContentSchema, type BantuanContentValues } from "@/lib/schema";
 import { getBantuan, updateBantuan } from "@/services/firestoreService";
+import { Separator } from "@/components/ui/separator"; // Added import
 
 const defaultFaqItem = { question: "", answer: "" };
 const defaultBantuanValues: BantuanContentValues = {
@@ -52,7 +53,7 @@ export default function ManageBantuanPage() {
         } else {
           // If no data in Firestore, set default values which might trigger an initial save
           // Or, initialize Firestore with default values if this page is visited for the first time
-           await updateBantuan(defaultBantuanValues); 
+           await updateBantuan(defaultBantuanValues);
            form.reset(defaultBantuanValues);
         }
       } catch (error) {
@@ -95,7 +96,7 @@ export default function ManageBantuanPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            
+
             <FormField control={form.control} name="mainTitle" render={({ field }) => (
               <FormItem>
                 <FormLabel>Judul Utama Halaman</FormLabel>
@@ -117,7 +118,7 @@ export default function ManageBantuanPage() {
                 <FormControl><Input {...field} /></FormControl><FormMessage />
               </FormItem>
             )}/>
-            
+
             {fields.map((field, index) => (
               <Card key={field.id} className="p-4 space-y-4 border shadow-sm">
                 <div className="flex justify-between items-center">
