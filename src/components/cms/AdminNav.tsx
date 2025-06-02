@@ -47,4 +47,6 @@ export default function AdminNav() {
           )})}
         </nav>
       </ScrollArea>
-    </
+    </aside>
+  );
+}

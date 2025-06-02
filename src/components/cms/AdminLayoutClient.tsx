@@ -27,3 +27,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
         <p className="ml-4">Verifying admin access...</p>
       </div>
     );
+  }
+
+  return children; // Allow rendering of admin content if user is authorized
+}
