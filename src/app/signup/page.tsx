@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function SignupPage() {
@@ -15,13 +15,20 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const { user, loading: authLoading } = useAuth();
   
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push("/resume");
+    }
+  }, [user, authLoading, router]);
+
   if (authLoading) {
     return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
   if (user) {
-    router.push("/resume");
-    return null;
+    // If user is already logged in and useEffect hasn't redirected yet, return null
+    // The useEffect above will handle the redirect.
+    return null; 
   }
 
   const handleSignup = async (values: { email: string; password: string }) => {
@@ -29,7 +36,7 @@ export default function SignupPage() {
     try {
       await createUserWithEmailAndPassword(auth, values.email, values.password);
       toast({ title: "Signup Successful", description: "Welcome to ResumeForge!" });
-      router.push("/resume");
+      // router.push("/resume"); // Navigation is handled by useEffect after user state updates
     } catch (error: any) {
       console.error("Signup error:", error);
       toast({
