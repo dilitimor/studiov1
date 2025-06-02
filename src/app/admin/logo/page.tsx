@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +13,7 @@ import { Loader2, Image as ImageIcon } from "lucide-react";
 import { LogoSchema, type LogoValues } from "@/lib/schema";
 import { getLogo, updateLogo } from "@/services/firestoreService";
 import NextImage from "next/image"; // Renamed to avoid conflict
+import { Label } from "@/components/ui/label"; // Added import for base Label
 
 export default function ManageLogoPage() {
   const { toast } = useToast();
@@ -74,7 +76,8 @@ export default function ManageLogoPage() {
       <CardContent>
         {currentLogoUrl && (
           <div className="mb-6 p-4 border rounded-md bg-muted flex flex-col items-center">
-            <FormLabel className="mb-2 self-start">Current Logo:</FormLabel>
+            {/* Use basic Label here as it's not part of a FormField context */}
+            <Label className="mb-2 self-start font-medium">Current Logo:</Label>
             <NextImage src={currentLogoUrl} alt="Current Site Logo" width={200} height={60} className="object-contain rounded-md" data-ai-hint="company logo" />
           </div>
         )}
@@ -85,7 +88,7 @@ export default function ManageLogoPage() {
               name="url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Logo Image URL</FormLabel>
+                  <FormLabel>Logo Image URL</FormLabel> {/* FormLabel is correct here */}
                   <FormControl>
                     <Input placeholder="https://example.com/logo.png" {...field} />
                   </FormControl>
@@ -100,4 +103,6 @@ export default function ManageLogoPage() {
           </form>
         </Form>
       </CardContent>
-    </
+    </Card>
+  );
+}
