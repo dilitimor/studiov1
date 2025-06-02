@@ -113,8 +113,7 @@ export type ReferencesValues = z.infer<typeof ReferencesSchema>;
 
 
 export const FullResumeSchema = z.object({
-  // id: z.string().optional(), // Firestore document ID, not part of form values usually but useful if pre-loading
-  userId: z.string().optional(), // To associate with a user
+  userId: z.string().optional(), 
   targetPosition: TargetPositionSchema,
   biodata: BiodataSchema,
   shortProfile: ShortProfileSchema,
@@ -123,13 +122,13 @@ export const FullResumeSchema = z.object({
   skills: SkillsSchema,
   hobbies: HobbiesSchema,
   references: ReferencesSchema,
-  createdAt: z.any().optional(), // Firestore ServerTimestamp
-  updatedAt: z.any().optional(), // Firestore ServerTimestamp
+  createdAt: z.any().optional(), 
+  updatedAt: z.any().optional(), 
 });
 export type FullResumeValues = z.infer<typeof FullResumeSchema>;
 
 export interface ResumeDocument extends FullResumeValues {
-  id: string; // Firestore document ID
+  id: string; 
 }
 
 
@@ -190,11 +189,13 @@ export type FooterContentValues = z.infer<typeof FooterContentSchema>;
 
 // Schema for AI Resume Templates (Admin)
 export const AiResumeTemplateSchema = z.object({
-  id: z.string().optional(), // Firestore document ID
+  id: z.string().optional(), 
   name: z.string().min(1, "Nama template wajib diisi"),
   description: z.string().min(1, "Deskripsi template wajib diisi"),
-  // Storing content as string for now. Could be URL or structured data later.
-  content: z.string().min(1, "Konten template (atau URL) wajib diisi"),
+  // content: z.string().min(1, "Konten template (atau URL) wajib diisi"), // Old field
+  contentUrl: z.string().url("URL konten PDF tidak valid").optional().nullable(),
+  contentFileName: z.string().optional().nullable(),
+  contentStoragePath: z.string().optional().nullable(),
   createdAt: z.any().optional(),
   updatedAt: z.any().optional(),
 });
