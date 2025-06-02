@@ -1,6 +1,8 @@
+
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminNav from "@/components/cms/AdminNav";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import AdminLayoutClient from "@/components/cms/AdminLayoutClient"; // Added import
 import { useAuth } from "@/contexts/AuthContext"; // Ensure this path is correct if using custom useAuth
 import { redirect } from 'next/navigation';
 
