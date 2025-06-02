@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -6,15 +7,15 @@ import { cn } from "@/lib/utils";
 import { ADMIN_NAV_LINKS } from "@/lib/constants";
 import SiteLogo from "@/components/layout/SiteLogo";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { LayoutDashboard, Image as ImageIcon, FileText, Newspaper, HelpCircle, Dock } from "lucide-react"; // Using 'Dock' for Footer as an example
+import { LayoutDashboard, Image as ImageIcon, FileText, Newspaper, HelpCircle, Dock } from "lucide-react"; 
 
 const iconMap: { [key: string]: React.ElementType } = {
   '/admin/dashboard': LayoutDashboard,
   '/admin/logo': ImageIcon,
   '/admin/content/tentang-kami': FileText,
-  '/admin/content/blog': Newspaper,
+  '/admin/content/blog': Newspaper, // Using Newspaper for blog
   '/admin/content/bantuan': HelpCircle,
-  '/admin/content/footer': Dock,
+  '/admin/content/footer': Dock, // Using Dock for Footer
 };
 
 
@@ -29,14 +30,15 @@ export default function AdminNav() {
       <ScrollArea className="flex-1">
         <nav className="p-4 space-y-2">
           {ADMIN_NAV_LINKS.map((link) => {
-            const IconComponent = iconMap[link.href] || FileText;
+            const IconComponent = iconMap[link.href] || FileText; // Default to FileText if no specific icon
             return (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
                 "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/admin/dashboard')
+                // More specific matching for nested routes like blog/edit/[id]
+                pathname === link.href || (pathname.startsWith(link.href + '/') && link.href !== '/admin/dashboard')
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
