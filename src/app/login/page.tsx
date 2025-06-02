@@ -35,22 +35,23 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({ title: "Login Successful", description: "Welcome back!" });
-      // router.push("/resume"); // This will be handled by the useEffect after user state updates
+      // Navigation is handled by useEffect after user state updates
     } catch (error: any) {
       console.error("Login error:", error);
       let description = "An unexpected error occurred. Please try again.";
+      let shouldRedirectToSignup = false;
+
       if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        description = "Invalid email or password. Please check your credentials and try again.";
+        // This error code is generic for "user not found" or "wrong password".
+        // We will redirect to signup as per the request, assuming it might be a new user.
+        description = "Login failed. If you're new, please sign up. If you have an account, please check your credentials and try logging in again.";
+        shouldRedirectToSignup = true;
       } else if (error.code === 'auth/invalid-email') {
         description = "The email address is not valid. Please check the format.";
       } else if (error.code === 'auth/user-disabled') {
         description = "This user account has been disabled.";
       } else if (error.message) {
-        // Fallback to Firebase's message if it's something else, 
-        // or provide a generic one if error.message is also not helpful.
-        description = error.message.includes("auth/invalid-credential") 
-            ? "Invalid email or password. Please check your credentials and try again."
-            : error.message;
+        description = error.message;
       }
       
       toast({
@@ -58,6 +59,10 @@ export default function LoginPage() {
         description: description,
         variant: "destructive",
       });
+
+      if (shouldRedirectToSignup) {
+        router.push('/signup');
+      }
     } finally {
       setLoading(false);
     }
