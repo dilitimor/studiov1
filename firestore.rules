@@ -1,0 +1,27 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // CMS Content (Logo, Tentang Kami, Bantuan, Footer)
+    // Publicly readable, writable only by admin.
+    match /cms_content/{documentId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.email == 'admin@example.com';
+    }
+
+    // Blog Posts
+    // Publicly readable, writable only by admin.
+    match /blog_posts/{postId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null && request.auth.token.email == 'admin@example.com';
+    }
+
+    // User-specific data (e.g., resumes)
+    // Only the authenticated owner can access their own data.
+    match /users/{userId}/{document=**} {
+      allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
