@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, type ChangeEvent } from 'react';
+import { useState, type ChangeEvent, useEffect } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -14,12 +14,26 @@ import { Button } from '@/components/ui/button';
 import { UploadCloud, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+const MAX_PHOTO_SIZE_BYTES = 300 * 1024; // 300KB limit
+const MAX_PHOTO_SIZE_MB = (MAX_PHOTO_SIZE_BYTES / (1024 * 1024)).toFixed(1);
+
+
 export default function BiodataStepForm() {
   const { control, setValue, watch } = useFormContext<FullResumeValues>();
   const { toast } = useToast();
   
   const currentPhotoUrl = watch('biodata.photoUrl');
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentPhotoUrl || null);
+
+  useEffect(() => {
+    if (currentPhotoUrl && currentPhotoUrl !== previewUrl) {
+      setPreviewUrl(currentPhotoUrl);
+    }
+    if (!currentPhotoUrl && previewUrl) {
+        setPreviewUrl(null);
+    }
+  }, [currentPhotoUrl, previewUrl]);
+
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -30,17 +44,17 @@ export default function BiodataStepForm() {
           description: "Harap unggah file gambar (contoh: JPG, PNG).",
           variant: "destructive",
         });
-        event.target.value = ''; // Clear the file input
+        event.target.value = ''; 
         return;
       }
-      // Max 2MB file size
-      if (file.size > 2 * 1024 * 1024) {
+      
+      if (file.size > MAX_PHOTO_SIZE_BYTES) {
          toast({
           title: "Ukuran File Terlalu Besar",
-          description: "Ukuran file maksimal adalah 2MB.",
+          description: `Ukuran file foto profil maksimal adalah ${MAX_PHOTO_SIZE_BYTES / 1024}KB. File Anda terlalu besar.`,
           variant: "destructive",
         });
-        event.target.value = ''; // Clear the file input
+        event.target.value = ''; 
         return;
       }
 
@@ -50,20 +64,20 @@ export default function BiodataStepForm() {
         setValue('biodata.photoUrl', result, { shouldValidate: true });
         setPreviewUrl(result);
       };
+      reader.onerror = () => {
+        toast({
+          title: "Gagal Membaca File",
+          description: "Terjadi kesalahan saat mencoba membaca file gambar.",
+          variant: "destructive",
+        });
+      };
       reader.readAsDataURL(file);
-    } else {
-      // If no file is selected (e.g., user cancels dialog), clear existing
-      // setValue('biodata.photoUrl', '', { shouldValidate: true });
-      // setPreviewUrl(null);
-      // Retain existing photo if selection is cancelled. 
-      // To clear, user must click "Hapus Foto"
     }
   };
 
   const removePhoto = () => {
     setValue('biodata.photoUrl', '', { shouldValidate: true });
     setPreviewUrl(null);
-    // Reset file input visually (though it's hard to control directly)
     const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = '';
@@ -74,16 +88,6 @@ export default function BiodataStepForm() {
     });
   };
   
-  // Sync previewUrl if currentPhotoUrl changes externally (e.g. form reset or load from db)
-  useState(() => {
-    if (currentPhotoUrl && currentPhotoUrl !== previewUrl) {
-      setPreviewUrl(currentPhotoUrl);
-    }
-    if (!currentPhotoUrl && previewUrl) {
-        setPreviewUrl(null);
-    }
-  });
-
 
   return (
     <div className="space-y-6 p-2">
@@ -174,14 +178,14 @@ export default function BiodataStepForm() {
       />
       
       <FormItem>
-        <FormLabel htmlFor="photo-upload">Foto Profil (opsional, maks. 2MB)</FormLabel>
+        <FormLabel htmlFor="photo-upload">Foto Profil (opsional, maks. {MAX_PHOTO_SIZE_BYTES / 1024}KB)</FormLabel>
         <div className="flex items-center gap-4">
           <Input
             id="photo-upload"
             type="file"
             accept="image/png, image/jpeg, image/gif"
             onChange={handleFileChange}
-            className="hidden" // Hidden, triggered by button
+            className="hidden" 
           />
           <Button type="button" variant="outline" onClick={() => document.getElementById('photo-upload')?.click()}>
             <UploadCloud className="mr-2 h-4 w-4" /> Unggah Foto
