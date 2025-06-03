@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -10,6 +9,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Loader2, PlusCircle, Edit, Trash2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAiResumeTemplates, deleteAiResumeTemplate, type AiResumeTemplateDocument } from "@/services/firestoreService";
+import type { ResumeType } from "@/lib/schema";
+
+const resumeTypeLabels: Record<ResumeType | string, string> = {
+  lulusan_baru: "Lulusan Baru",
+  profesional: "Profesional",
+  ganti_karier: "Ganti Karier",
+};
 
 export default function ManageAiTemplatesPage() {
   const [templates, setTemplates] = useState<AiResumeTemplateDocument[]>([]);
@@ -31,14 +37,14 @@ export default function ManageAiTemplatesPage() {
 
   useEffect(() => {
     fetchTemplates();
-  }, [toast]); // Removed fetchTemplates from dependency array as it's defined in scope
+  }, []);
 
   const handleDeleteTemplate = async (id: string) => {
     setIsDeleting(id);
     try {
       await deleteAiResumeTemplate(id);
       toast({ title: "Sukses", description: "Template AI berhasil dihapus." });
-      fetchTemplates(); // Refresh the list
+      fetchTemplates(); 
     } catch (error) {
       toast({ title: "Error", description: "Gagal menghapus template AI.", variant: "destructive" });
     } finally {
@@ -78,6 +84,7 @@ export default function ManageAiTemplatesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nama Template</TableHead>
+                <TableHead>Tipe Resume</TableHead>
                 <TableHead>Deskripsi Singkat</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
@@ -86,6 +93,7 @@ export default function ManageAiTemplatesPage() {
               {templates.map((template) => (
                 <TableRow key={template.id}>
                   <TableCell className="font-medium">{template.name}</TableCell>
+                  <TableCell>{template.resumeType ? resumeTypeLabels[template.resumeType] : 'Tidak Ditentukan'}</TableCell>
                   <TableCell className="truncate max-w-xs">{template.description}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="outline" size="icon" asChild className="hover:text-primary hover:border-primary">

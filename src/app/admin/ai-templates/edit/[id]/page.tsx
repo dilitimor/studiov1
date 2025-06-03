@@ -11,30 +11,35 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Loader2, ArrowLeft, Sparkles, UploadCloud, FileText, XCircle, Download } from "lucide-react";
-import { AiResumeTemplateSchema, type AiResumeTemplateValues } from "@/lib/schema";
+import { AiResumeTemplateSchema, type AiResumeTemplateValues, ResumeTypeEnum } from "@/lib/schema";
 import { getAiResumeTemplate, updateAiResumeTemplate } from "@/services/firestoreService";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Added
+
+const resumeTypeOptions = [
+  { value: "lulusan_baru", label: "Lulusan Baru" },
+  { value: "profesional", label: "Profesional" },
+  { value: "ganti_karier", label: "Ganti Karier" },
+];
 
 export default function EditAiTemplatePage() {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
-  
+
   const templateId = typeof params.id === 'string' ? params.id : null;
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
-  // fileNameForDisplay will hold the name of the currently selected or existing file for UI.
   const [fileNameForDisplay, setFileNameForDisplay] = useState<string | null>(null);
-  // No longer need selectedFile, currentPdfInfo, or fileMarkedForRemoval in the same way.
-  // We will rely on form state (contentPdfDataUri, contentPdfFileName)
 
   const form = useForm<AiResumeTemplateValues>({
     resolver: zodResolver(AiResumeTemplateSchema),
     defaultValues: {
       name: "",
       description: "",
+      resumeType: undefined,
       contentPdfDataUri: undefined,
       contentPdfFileName: undefined,
     },
@@ -59,6 +64,7 @@ export default function EditAiTemplatePage() {
           form.reset({
             name: templateData.name || "",
             description: templateData.description || "",
+            resumeType: templateData.resumeType || undefined,
             contentPdfDataUri: templateData.contentPdfDataUri || undefined,
             contentPdfFileName: templateData.contentPdfFileName || undefined,
           });
@@ -81,21 +87,20 @@ export default function EditAiTemplatePage() {
     if (file) {
       if (file.type !== "application/pdf") {
         toast({ title: "Format File Salah", description: "Harap unggah file PDF.", variant: "destructive" });
-        // Do not clear existing valid data if user selects wrong file type
         event.target.value = '';
         return;
       }
-      if (file.size > 700 * 1024) { // ~700KB limit for base64 in 1MB doc
+      if (file.size > 700 * 1024) {
         toast({ title: "Ukuran File Terlalu Besar", description: "Ukuran file PDF maksimal adalah 700KB.", variant: "destructive" });
         event.target.value = '';
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         form.setValue('contentPdfDataUri', reader.result as string, { shouldValidate: true });
         form.setValue('contentPdfFileName', file.name, { shouldValidate: true });
-        setFileNameForDisplay(file.name); // Update display name immediately
+        setFileNameForDisplay(file.name);
       };
       reader.onerror = () => {
          toast({ title: "Error Baca File", description: "Gagal membaca file PDF.", variant: "destructive" });
@@ -107,7 +112,7 @@ export default function EditAiTemplatePage() {
   const removeCurrentOrSelectedFile = () => {
     form.setValue('contentPdfDataUri', null, { shouldValidate: true });
     form.setValue('contentPdfFileName', null, { shouldValidate: true });
-    setFileNameForDisplay(null); // Clear display name
+    setFileNameForDisplay(null);
     const fileInput = document.getElementById('pdf-upload-edit') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
   };
@@ -116,13 +121,11 @@ export default function EditAiTemplatePage() {
     if (!templateId) return;
     setIsLoading(true);
 
-    // Values already contain contentPdfDataUri and contentPdfFileName
-    // If they are null, it means the file was removed.
-    // If they have data, it's either existing or new.
     const dataToUpdate: Partial<AiResumeTemplateValues> = {
         name: values.name,
         description: values.description,
-        contentPdfDataUri: values.contentPdfDataUri, 
+        resumeType: values.resumeType,
+        contentPdfDataUri: values.contentPdfDataUri,
         contentPdfFileName: values.contentPdfFileName,
     };
 
@@ -176,10 +179,31 @@ export default function EditAiTemplatePage() {
                 <FormControl><Textarea {...field} rows={3} /></FormControl><FormMessage />
               </FormItem>
             )}/>
-            
+            <FormField
+              control={form.control}
+              name="resumeType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipe Resume (untuk Referensi AI)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || undefined}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih tipe resume yang relevan" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {resumeTypeOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormItem>
                 <FormLabel htmlFor="pdf-upload-edit">Template PDF (maks. 700KB)</FormLabel>
-                {/* Display current file info if a file name exists in form state */}
                 {watchedPdfFileName && (
                     <div className="my-2 p-3 border rounded-md bg-muted text-sm">
                         <div className="flex items-center justify-between">
@@ -218,18 +242,17 @@ export default function EditAiTemplatePage() {
                         </Button>
                     )}
                 </div>
-                {/* Hidden inputs for react-hook-form to track these values */}
-                <FormField 
-                  control={form.control} 
-                  name="contentPdfDataUri" 
-                  render={({ field }) => <Input {...field} value={field.value === null ? '' : field.value || ''} type="hidden" />} 
+                <FormField
+                  control={form.control}
+                  name="contentPdfDataUri"
+                  render={({ field }) => <Input {...field} value={field.value === null ? '' : field.value || ''} type="hidden" />}
                 />
-                 <FormField 
-                  control={form.control} 
-                  name="contentPdfFileName" 
-                  render={({ field }) => <Input {...field} value={field.value === null ? '' : field.value || ''} type="hidden" />} 
+                 <FormField
+                  control={form.control}
+                  name="contentPdfFileName"
+                  render={({ field }) => <Input {...field} value={field.value === null ? '' : field.value || ''} type="hidden" />}
                 />
-                <FormMessage /> {/* For errors related to the conceptual "file" field */}
+                <FormMessage />
             </FormItem>
 
             <Button type="submit" disabled={isLoading || isFetching} className="w-full md:w-auto">
@@ -242,4 +265,3 @@ export default function EditAiTemplatePage() {
     </Card>
   );
 }
-

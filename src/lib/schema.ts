@@ -113,7 +113,7 @@ export type ReferencesValues = z.infer<typeof ReferencesSchema>;
 
 
 export const FullResumeSchema = z.object({
-  userId: z.string().optional(), 
+  userId: z.string().optional(),
   targetPosition: TargetPositionSchema,
   biodata: BiodataSchema,
   shortProfile: ShortProfileSchema,
@@ -122,13 +122,13 @@ export const FullResumeSchema = z.object({
   skills: SkillsSchema,
   hobbies: HobbiesSchema,
   references: ReferencesSchema,
-  createdAt: z.any().optional(), 
-  updatedAt: z.any().optional(), 
+  createdAt: z.any().optional(),
+  updatedAt: z.any().optional(),
 });
 export type FullResumeValues = z.infer<typeof FullResumeSchema>;
 
 export interface ResumeDocument extends FullResumeValues {
-  id: string; 
+  id: string;
 }
 
 
@@ -177,7 +177,7 @@ export const BlogPostSchema = z.object({
 });
 export type BlogPostValues = z.infer<typeof BlogPostSchema>;
 export interface BlogPostDocument extends BlogPostValues {
-  id: string; 
+  id: string;
   createdAt?: any;
   updatedAt?: any;
 }
@@ -187,11 +187,18 @@ export const FooterContentSchema = z.object({
 });
 export type FooterContentValues = z.infer<typeof FooterContentSchema>;
 
+export const ResumeTypeEnum = z.enum(["lulusan_baru", "profesional", "ganti_karier"], {
+  errorMap: () => ({ message: "Pilih tipe resume yang valid." }),
+});
+export type ResumeType = z.infer<typeof ResumeTypeEnum>;
+
+
 // Schema for AI Resume Templates (Admin)
 export const AiResumeTemplateSchema = z.object({
-  id: z.string().optional(), 
+  id: z.string().optional(),
   name: z.string().min(1, "Nama template wajib diisi"),
   description: z.string().min(1, "Deskripsi template wajib diisi"),
+  resumeType: ResumeTypeEnum.optional(), // Added resumeType field
   contentPdfDataUri: z.string().optional().nullable(), // Stores PDF as base64 Data URI
   contentPdfFileName: z.string().optional().nullable(), // Stores the original file name
   createdAt: z.any().optional(),
@@ -201,4 +208,4 @@ export type AiResumeTemplateValues = z.infer<typeof AiResumeTemplateSchema>;
 export interface AiResumeTemplateDocument extends AiResumeTemplateValues {
   id: string;
 }
-    
+

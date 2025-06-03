@@ -11,14 +11,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useState, type ChangeEvent } from "react";
 import { Loader2, ArrowLeft, Sparkles, UploadCloud, FileText, XCircle } from "lucide-react";
-import { AiResumeTemplateSchema, type AiResumeTemplateValues } from "@/lib/schema";
+import { AiResumeTemplateSchema, type AiResumeTemplateValues, ResumeTypeEnum } from "@/lib/schema";
 import { addAiResumeTemplate } from "@/services/firestoreService";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Added
+
+const resumeTypeOptions = [
+  { value: "lulusan_baru", label: "Lulusan Baru" },
+  { value: "profesional", label: "Profesional" },
+  { value: "ganti_karier", label: "Ganti Karier" },
+];
 
 const defaultValues: Partial<AiResumeTemplateValues> = {
   name: "",
   description: "",
+  resumeType: undefined,
   contentPdfDataUri: undefined,
   contentPdfFileName: undefined,
 };
@@ -27,7 +35,6 @@ export default function NewAiTemplatePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  // No longer need selectedFile state, as we'll process to Data URI immediately
   const [fileNameForDisplay, setFileNameForDisplay] = useState<string | null>(null);
 
 
@@ -45,12 +52,10 @@ export default function NewAiTemplatePage() {
         form.setValue('contentPdfDataUri', null);
         form.setValue('contentPdfFileName', null);
         setFileNameForDisplay(null);
-        event.target.value = ''; 
+        event.target.value = '';
         return;
       }
-      // Firestore 1MB limit on documents. Base64 is ~33% larger.
-      // So, raw file size limit should be around 700KB to be safe.
-      if (file.size > 700 * 1024) { 
+      if (file.size > 700 * 1024) {
         toast({ title: "Ukuran File Terlalu Besar", description: "Ukuran file PDF maksimal adalah 700KB (karena disimpan di database).", variant: "destructive" });
         form.setValue('contentPdfDataUri', null);
         form.setValue('contentPdfFileName', null);
@@ -58,7 +63,7 @@ export default function NewAiTemplatePage() {
         event.target.value = '';
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         form.setValue('contentPdfDataUri', reader.result as string, { shouldValidate: true });
@@ -73,7 +78,7 @@ export default function NewAiTemplatePage() {
       }
       reader.readAsDataURL(file);
 
-    } else { // User cancelled file dialog
+    } else {
       // Do nothing, keep existing values if any
     }
   };
@@ -89,7 +94,6 @@ export default function NewAiTemplatePage() {
   const onSubmit = async (values: AiResumeTemplateValues) => {
     setIsLoading(true);
     try {
-      // The values object already contains contentPdfDataUri and contentPdfFileName from the form
       await addAiResumeTemplate(values);
       toast({ title: "Sukses", description: "Template AI baru berhasil ditambahkan." });
       router.push("/admin/ai-templates");
@@ -131,7 +135,29 @@ export default function NewAiTemplatePage() {
                 <FormMessage />
               </FormItem>
             )}/>
-            
+            <FormField
+              control={form.control}
+              name="resumeType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipe Resume (untuk Referensi AI)</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value || undefined}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih tipe resume yang relevan" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {resumeTypeOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormItem>
                 <FormLabel htmlFor="pdf-upload">Template PDF (maks. 700KB)</FormLabel>
                 <div className="flex items-center gap-4">
@@ -157,33 +183,31 @@ export default function NewAiTemplatePage() {
                         <span>{fileNameForDisplay}</span>
                     </div>
                 )}
-                {/* Hidden input for react-hook-form to track contentPdfDataUri */}
-                <FormField 
-                  control={form.control} 
-                  name="contentPdfDataUri" 
+                <FormField
+                  control={form.control}
+                  name="contentPdfDataUri"
                   render={({ field }) => (
-                    <Input 
-                      {...field} 
-                      value={field.value === null ? '' : field.value || ''} 
-                      type="hidden" 
+                    <Input
+                      {...field}
+                      value={field.value === null ? '' : field.value || ''}
+                      type="hidden"
                     />
-                  )} 
+                  )}
                 />
-                 {/* Hidden input for react-hook-form to track contentPdfFileName */}
-                <FormField 
-                  control={form.control} 
-                  name="contentPdfFileName" 
+                <FormField
+                  control={form.control}
+                  name="contentPdfFileName"
                   render={({ field }) => (
-                    <Input 
-                      {...field} 
-                      value={field.value === null ? '' : field.value || ''} 
-                      type="hidden" 
+                    <Input
+                      {...field}
+                      value={field.value === null ? '' : field.value || ''}
+                      type="hidden"
                     />
-                  )} 
+                  )}
                 />
                 <FormMessage />
             </FormItem>
-            
+
             <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Simpan Template
@@ -194,4 +218,3 @@ export default function NewAiTemplatePage() {
     </Card>
   );
 }
-
