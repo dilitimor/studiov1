@@ -14,6 +14,10 @@ import { Loader2, FileCheck2, Palette, GraduationCap, Briefcase, Repeat, UserCir
 import { useAuth } from '@/contexts/AuthContext';
 import { getResume, type FullResumeValues, getAiResumeTemplates, type AiResumeTemplateDocument, type ResumeType } from '@/services/firestoreService';
 import { generateFullResume, type GenerateFullResumeOutput } from '@/ai/flows/generate-full-resume';
+// Import Zod to infer the type for flowInputData, matching the AI flow's input schema structure.
+import type { z } from 'zod';
+import type { GenerateFullResumeInput } from '@/ai/flows/generate-full-resume';
+
 
 const resumeTypeOptions = [
   { id: 'lulusan_baru' as ResumeType, label: 'Lulusan Baru', description: 'Ideal untuk Anda yang baru lulus dan ingin menonjolkan potensi serta pendidikan.', icon: <GraduationCap className="h-5 w-5" /> },
@@ -96,7 +100,6 @@ export default function GenerateResumePage() {
     setGeneratedResumeText(null);
 
     try {
-      // Find the relevant AI template PDF URI
       const relevantTemplate = aiTemplates.find(t => t.resumeType === selectedUserResumeType && t.contentPdfDataUri);
       const referenceTemplatePdfUri = relevantTemplate?.contentPdfDataUri || undefined;
 
@@ -106,9 +109,22 @@ export default function GenerateResumePage() {
          toast({ title: "Info Template", description: `Tidak ada template yang sesuai dengan tipe '${selectedUserResumeType}'. Melanjutkan tanpa referensi PDF.`, variant: "default" });
       }
 
+      // Construct a plain object for resumeData to pass to the server action,
+      // matching the structure expected by FullResumeDataSchemaZod in the AI flow.
+      // This explicitly omits Firestore Timestamps or other non-plain objects.
+      const flowInputResumeData: GenerateFullResumeInput['resumeData'] = {
+        targetPosition: resumeData.targetPosition,
+        biodata: resumeData.biodata,
+        shortProfile: resumeData.shortProfile,
+        education: resumeData.education,
+        experience: resumeData.experience,
+        skills: resumeData.skills,
+        hobbies: resumeData.hobbies,
+        references: resumeData.references,
+      };
 
       const result: GenerateFullResumeOutput = await generateFullResume({
-        resumeData: resumeData, // Pass the full resume data object
+        resumeData: flowInputResumeData,
         selectedResumeType: selectedUserResumeType,
         referenceTemplatePdfUri: referenceTemplatePdfUri,
       });
@@ -222,3 +238,4 @@ export default function GenerateResumePage() {
     </ProtectedRoute>
   );
 }
+
