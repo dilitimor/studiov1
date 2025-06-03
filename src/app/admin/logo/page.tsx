@@ -34,6 +34,11 @@ export default function ManageLogoPage() {
         if (logoData && logoData.url) {
           form.reset({ url: logoData.url });
           setCurrentLogoUrl(logoData.url);
+        } else {
+          // If no logo data, ensure form is reset to default empty string
+          // and currentLogoUrl is null to hide preview
+          form.reset({ url: "" });
+          setCurrentLogoUrl(null);
         }
       } catch (error) {
         toast({ title: "Error", description: "Failed to fetch logo.", variant: "destructive" });
@@ -48,7 +53,7 @@ export default function ManageLogoPage() {
     setIsLoading(true);
     try {
       await updateLogo(values);
-      setCurrentLogoUrl(values.url);
+      setCurrentLogoUrl(values.url || null); // Update preview, set to null if URL is empty
       toast({ title: "Success", description: "Logo updated successfully." });
     } catch (error) {
       toast({ title: "Error", description: "Failed to update logo.", variant: "destructive" });
@@ -76,7 +81,6 @@ export default function ManageLogoPage() {
       <CardContent>
         {currentLogoUrl && (
           <div className="mb-6 p-4 border rounded-md bg-muted flex flex-col items-center">
-            {/* Use basic Label here as it's not part of a FormField context */}
             <Label className="mb-2 self-start font-medium">Current Logo:</Label>
             <NextImage src={currentLogoUrl} alt="Current Site Logo" width={200} height={60} className="object-contain rounded-md" data-ai-hint="company logo" />
           </div>
@@ -88,16 +92,25 @@ export default function ManageLogoPage() {
               name="url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Logo Image URL</FormLabel> {/* FormLabel is correct here */}
+                  <FormLabel>Logo Image URL</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://example.com/logo.png" {...field} />
+                    <Input 
+                      placeholder="https://example.com/logo.png" 
+                      {...field} 
+                      value={field.value === null ? '' : field.value || ''} // Ensure value is not null
+                      onChange={(e) => {
+                        field.onChange(e);
+                        // Optionally update preview as user types, or rely on onSubmit
+                        // setCurrentLogoUrl(e.target.value || null); 
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" disabled={isLoading || isFetching} className="w-full">
+              {(isLoading || isFetching) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Logo URL
             </Button>
           </form>
