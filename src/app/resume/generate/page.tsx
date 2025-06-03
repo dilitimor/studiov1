@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react'; // Added Suspense
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,13 +10,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { Loader2, FileCheck2, Palette, GraduationCap, Briefcase, Repeat, UserCircle } from 'lucide-react';
+import { Loader2, FileCheck2, Palette, GraduationCap, Briefcase, Repeat } from 'lucide-react'; // Removed UserCircle as it's not used
 import { useAuth } from '@/contexts/AuthContext';
 import { getResume, type FullResumeValues, getAiResumeTemplates, type AiResumeTemplateDocument, type ResumeType } from '@/services/firestoreService';
-import { generateFullResume, type GenerateFullResumeOutput } from '@/ai/flows/generate-full-resume';
-// Import Zod to infer the type for flowInputData, matching the AI flow's input schema structure.
-import type { z } from 'zod';
-import type { GenerateFullResumeInput } from '@/ai/flows/generate-full-resume';
+import { generateFullResume, type GenerateFullResumeOutput, type GenerateFullResumeInput } from '@/ai/flows/generate-full-resume';
 
 
 const resumeTypeOptions = [
@@ -25,9 +22,10 @@ const resumeTypeOptions = [
   { id: 'ganti_karier' as ResumeType, label: 'Ganti Karier', description: 'Fokus pada transferable skills dan bagaimana pengalaman masa lalu relevan dengan jalur karier baru.', icon: <Repeat className="h-5 w-5" /> },
 ];
 
-export default function GenerateResumePage() {
+// Renamed original component
+function GenerateResumeView() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams(); // This hook causes the warning
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
 
@@ -58,7 +56,21 @@ export default function GenerateResumePage() {
       try {
         const fetchedResumeData = await getResume(user.uid, id);
         if (fetchedResumeData) {
-          setResumeData(fetchedResumeData);
+          // Remove non-plain objects like Timestamps before setting state
+          const plainResumeData: FullResumeValues = {
+            targetPosition: fetchedResumeData.targetPosition,
+            biodata: fetchedResumeData.biodata,
+            shortProfile: fetchedResumeData.shortProfile,
+            education: fetchedResumeData.education,
+            experience: fetchedResumeData.experience,
+            skills: fetchedResumeData.skills,
+            hobbies: fetchedResumeData.hobbies,
+            references: fetchedResumeData.references,
+            // Explicitly exclude userId, createdAt, updatedAt from being set in this component's state
+            // if they are not part of FullResumeValues type or not needed here.
+            // Assuming FullResumeValues is already clean of Timestamps based on previous fix.
+          };
+          setResumeData(plainResumeData);
         } else {
           toast({ title: 'Error', description: 'Resume tidak ditemukan.', variant: 'destructive' });
           router.push('/my-resumes');
@@ -108,11 +120,8 @@ export default function GenerateResumePage() {
       } else if (!relevantTemplate) {
          toast({ title: "Info Template", description: `Tidak ada template yang sesuai dengan tipe '${selectedUserResumeType}'. Melanjutkan tanpa referensi PDF.`, variant: "default" });
       }
-
-      // Construct a plain object for resumeData to pass to the server action,
-      // matching the structure expected by FullResumeDataSchemaZod in the AI flow.
-      // This explicitly omits Firestore Timestamps or other non-plain objects.
-      const flowInputResumeData: GenerateFullResumeInput['resumeData'] = {
+      
+      const flowInputData: GenerateFullResumeInput['resumeData'] = {
         targetPosition: resumeData.targetPosition,
         biodata: resumeData.biodata,
         shortProfile: resumeData.shortProfile,
@@ -124,7 +133,7 @@ export default function GenerateResumePage() {
       };
 
       const result: GenerateFullResumeOutput = await generateFullResume({
-        resumeData: flowInputResumeData,
+        resumeData: flowInputData,
         selectedResumeType: selectedUserResumeType,
         referenceTemplatePdfUri: referenceTemplatePdfUri,
       });
@@ -239,3 +248,21 @@ export default function GenerateResumePage() {
   );
 }
 
+// Simple loader component for Suspense fallback
+function GeneratePageLoader() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+      <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+      <p className="text-lg text-muted-foreground">Preparing generation options...</p>
+    </div>
+  );
+}
+
+// New default export for the page route, wrapping the view in Suspense
+export default function GenerateResumePage() {
+  return (
+    <Suspense fallback={<GeneratePageLoader />}>
+      <GenerateResumeView />
+    </Suspense>
+  );
+}
