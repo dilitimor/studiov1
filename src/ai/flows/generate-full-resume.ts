@@ -93,14 +93,14 @@ const FullResumeDataSchemaZod = z.object({
   references: ReferencesSchemaZod.optional(),
 });
 
-export const GenerateFullResumeInputSchema = z.object({
+const GenerateFullResumeInputSchema = z.object({
   resumeData: FullResumeDataSchemaZod.describe("The complete resume data input by the user."),
   selectedResumeType: z.string().describe("The type of resume selected by the user (e.g., 'lulusan_baru', 'profesional', 'ganti_karier'). This dictates the style and tone."),
   referenceTemplatePdfUri: z.string().optional().describe("Optional. A Data URI of a PDF template to be used as a style and tone reference. Format: 'data:application/pdf;base64,<encoded_data>'."),
 });
 export type GenerateFullResumeInput = z.infer<typeof GenerateFullResumeInputSchema>;
 
-export const GenerateFullResumeOutputSchema = z.object({
+const GenerateFullResumeOutputSchema = z.object({
   generatedResumeText: z.string().describe("The generated resume content as a text or markdown string."),
 });
 export type GenerateFullResumeOutput = z.infer<typeof GenerateFullResumeOutputSchema>;
@@ -113,7 +113,7 @@ const systemPrompt = `You are an expert resume writer. Your task is to generate 
 
 The resume should be well-structured, concise, and tailored to the selected resume type.
 - For 'Lulusan Baru' (Fresh Graduate): Emphasize education, skills, relevant projects, and potential. Use an enthusiastic and proactive tone.
-- For 'Profesional': Highlight achievements, quantifiable results, and career progression. Use a confident and experienced tone.
+- For 'Profesional' (Professional): Highlight achievements, quantifiable results, and career progression. Use a confident and experienced tone.
 - For 'Ganti Karier' (Career Changer): Focus on transferable skills, adaptability, and how past experiences relate to the new career path. Use a motivated and forward-looking tone.
 
 Format the output as a clean, readable text or markdown that can be easily copied and pasted. Use clear headings for sections like "Biodata", "Profil Singkat", "Pendidikan", "Pengalaman Kerja", "Keahlian", etc.
@@ -229,3 +229,4 @@ const generateFullResumeFlow = ai.defineFlow(
     return output;
   }
 );
+
