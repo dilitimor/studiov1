@@ -134,7 +134,7 @@ export interface ResumeDocument extends FullResumeValues {
 
 // CMS Schemas
 export const LogoSchema = z.object({
-  url: z.string().url("URL logo tidak valid").or(z.literal("")),
+  dataUri: z.string().optional().nullable(), // Changed from url to dataUri, allows empty/null
 });
 export type LogoValues = z.infer<typeof LogoSchema>;
 
