@@ -35,7 +35,7 @@ export default function EditAiTemplatePage() {
     defaultValues: {
       name: "",
       description: "",
-      contentUrl: undefined, // Use undefined for initial uncontrolled state or ''
+      contentUrl: undefined, 
       contentFileName: undefined,
       contentStoragePath: undefined,
     },
@@ -54,7 +54,6 @@ export default function EditAiTemplatePage() {
       try {
         const templateData = await getAiResumeTemplate(templateId as string);
         if (templateData) {
-          // Ensure nullable fields are reset with '' or undefined for controlled inputs
           const resetData = {
             ...templateData,
             contentUrl: templateData.contentUrl || undefined,
@@ -104,15 +103,18 @@ export default function EditAiTemplatePage() {
       setCurrentPdfInfo(prev => ({ ...prev, name: file.name, url: null })); 
       setFileMarkedForRemoval(false); 
       form.setValue('contentUrl', undefined); 
+      form.setValue('contentFileName', undefined);
+      form.setValue('contentStoragePath', undefined);
     }
   };
 
   const removeCurrentOrSelectedFile = () => {
     setSelectedFile(null); 
-    setCurrentPdfInfo(prev => ({...prev, name: 'Akan dihapus saat disimpan', url: null})); 
+    setCurrentPdfInfo(prev => ({...prev, name: 'Akan dihapus saat disimpan', url: null, storagePath: prev.storagePath})); // Keep original storagePath in UI state for deletion reference
     setFileMarkedForRemoval(true); 
     form.setValue('contentUrl', null); 
     form.setValue('contentFileName', null);
+    form.setValue('contentStoragePath', null); // This is important for the form state
     const fileInput = document.getElementById('pdf-upload-edit') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
   };
@@ -122,24 +124,36 @@ export default function EditAiTemplatePage() {
     if (!templateId) return;
     setIsLoading(true);
 
+    // Base data to update (non-file fields)
     const dataToUpdate: Partial<AiResumeTemplateValues> = {
         name: values.name,
         description: values.description,
     };
-    
-    if (fileMarkedForRemoval && !selectedFile) {
+
+    // This will be passed to the service function for deleting the *actual file* from storage if needed
+    const originalStoragePathForDeletion = currentPdfInfo.storagePath;
+
+
+    if (selectedFile) {
+        // New file selected. Service function will handle upload and update file metadata.
+        // No need to set contentUrl/FileName/StoragePath in dataToUpdate here.
+    } else if (fileMarkedForRemoval) {
+        // File explicitly marked for removal, and no new file selected.
+        // Set Firestore fields to null.
         dataToUpdate.contentUrl = null;
         dataToUpdate.contentFileName = null;
-        dataToUpdate.contentStoragePath = form.getValues('contentStoragePath'); 
-    } else if (!selectedFile && values.contentUrl) {
+        dataToUpdate.contentStoragePath = null;
+    } else {
+        // No new file, not marked for removal: means we want to keep the existing file details.
+        // These values come from the form's current state (after initial load or if unchanged).
         dataToUpdate.contentUrl = values.contentUrl;
         dataToUpdate.contentFileName = values.contentFileName;
         dataToUpdate.contentStoragePath = values.contentStoragePath;
     }
 
-
     try {
-      await updateAiResumeTemplate(templateId, dataToUpdate, selectedFile || undefined, form.getValues('contentStoragePath'));
+      // Pass `originalStoragePathForDeletion` for the service to use if it needs to delete from storage.
+      await updateAiResumeTemplate(templateId, dataToUpdate, selectedFile || undefined, originalStoragePathForDeletion);
       toast({ title: "Sukses", description: "Template AI berhasil diperbarui." });
       router.push("/admin/ai-templates");
     } catch (error: any) {
@@ -191,7 +205,8 @@ export default function EditAiTemplatePage() {
             
             <FormItem>
                 <FormLabel htmlFor="pdf-upload-edit">Template PDF (maks. 5MB)</FormLabel>
-                {currentPdfInfo.name && currentPdfInfo.url && !selectedFile && !fileMarkedForRemoval && (
+                {/* Display current file if it exists, no new file selected, and not marked for removal */}
+                {currentPdfInfo.url && currentPdfInfo.name && !selectedFile && !fileMarkedForRemoval && (
                     <div className="my-2 p-3 border rounded-md bg-muted text-sm">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -204,12 +219,14 @@ export default function EditAiTemplatePage() {
                         </div>
                     </div>
                 )}
+                {/* Display newly selected file */}
                  {selectedFile && (
                      <div className="my-2 p-3 border rounded-md bg-muted text-sm flex items-center gap-2">
                         <FileText className="h-5 w-5 text-green-600" />
                         <span>File Baru: {selectedFile.name}</span>
                     </div>
                 )}
+                {/* Display message if file is marked for removal */}
                 {fileMarkedForRemoval && !selectedFile && (
                     <div className="my-2 p-3 border rounded-md bg-destructive/10 text-destructive text-sm flex items-center gap-2">
                         <FileText className="h-5 w-5" />
@@ -228,24 +245,30 @@ export default function EditAiTemplatePage() {
                     <Button type="button" variant="outline" onClick={() => document.getElementById('pdf-upload-edit')?.click()}>
                         <UploadCloud className="mr-2 h-4 w-4" /> {currentPdfInfo.name && !selectedFile && !fileMarkedForRemoval ? 'Ganti PDF' : 'Unggah PDF Baru'}
                     </Button>
-                    {(currentPdfInfo.name || selectedFile) && !fileMarkedForRemoval && (
+                    {/* Show remove button if there's a current file or a new file selected, and it's not already marked for removal */}
+                    {(currentPdfInfo.url || selectedFile) && !fileMarkedForRemoval && (
                          <Button type="button" variant="destructive" size="sm" onClick={removeCurrentOrSelectedFile}>
                             <XCircle className="mr-1 h-4 w-4" /> Hapus PDF
                         </Button>
                     )}
                 </div>
+                {/* Hidden inputs for react-hook-form to track these values if needed, though service primarily drives them now */}
                 <FormField 
                   control={form.control} 
                   name="contentUrl" 
-                  render={({ field }) => (
-                    <Input 
-                      {...field} 
-                      value={field.value === null ? '' : field.value || ''} 
-                      type="hidden" 
-                    />
-                  )} 
+                  render={({ field }) => <Input {...field} value={field.value === null ? '' : field.value || ''} type="hidden" />} 
                 />
-                <FormMessage />
+                 <FormField 
+                  control={form.control} 
+                  name="contentFileName" 
+                  render={({ field }) => <Input {...field} value={field.value === null ? '' : field.value || ''} type="hidden" />} 
+                />
+                 <FormField 
+                  control={form.control} 
+                  name="contentStoragePath" 
+                  render={({ field }) => <Input {...field} value={field.value === null ? '' : field.value || ''} type="hidden" />} 
+                />
+                <FormMessage /> {/* For errors related to the conceptual "file" field */}
             </FormItem>
 
             <Button type="submit" disabled={isLoading || isFetching} className="w-full md:w-auto">
@@ -258,4 +281,5 @@ export default function EditAiTemplatePage() {
     </Card>
   );
 }
+
 
