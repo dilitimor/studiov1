@@ -1,3 +1,4 @@
+
 "use client";
 
 import AuthForm from "@/components/auth/AuthForm";
@@ -64,13 +65,12 @@ export default function AdminLoginPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-muted">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-primary">ResumeForge Admin</h1>
+        <h1 className="text-3xl font-bold text-primary">CVBeres.id Admin</h1>
       </div>
-      <AuthForm mode="login" onSubmit={handleAdminLogin} loading={loading} />
+      <AuthForm mode="login" onSubmit={handleAdminLogin} loading={loading} authFormTitle="Admin Login" />
     </div>
   );
 }
 
 // Override RootLayout for admin login to provide a simpler UI
-AdminLoginPage.getLayout = function getLayout(page: React.ReactElement) {
-  
+

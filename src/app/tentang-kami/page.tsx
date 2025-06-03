@@ -7,8 +7,8 @@ import { Loader2 } from "lucide-react";
 
 // Default content if CMS fetch fails or data is not set
 const defaultAboutUsContent: AboutUsContentValues = {
-  title: "Tentang ResumeForge",
-  content: "ResumeForge adalah platform inovatif yang dirancang untuk membantu Anda membuat resume profesional dengan mudah dan cepat. Kami percaya bahwa setiap orang berhak mendapatkan kesempatan terbaik dalam karir mereka, dan resume yang kuat adalah langkah pertama menuju kesuksesan.\n\nMisi kami adalah memberdayakan pencari kerja dengan alat yang canggih namun intuitif, menggabungkan desain modern dengan teknologi AI terkini untuk menghasilkan resume yang menonjol.\n\nTim kami terdiri dari para profesional di bidang HR, desain, dan teknologi, yang berkolaborasi untuk memberikan pengalaman terbaik bagi pengguna kami.",
+  title: "Tentang CVBeres.id",
+  content: "CVBeres.id adalah platform inovatif yang dirancang untuk membantu Anda membuat resume profesional dengan mudah dan cepat. Kami percaya bahwa setiap orang berhak mendapatkan kesempatan terbaik dalam karir mereka, dan resume yang kuat adalah langkah pertama menuju kesuksesan.\n\nMisi kami adalah memberdayakan pencari kerja dengan alat yang canggih namun intuitif, menggabungkan desain modern dengan teknologi AI terkini untuk menghasilkan resume yang menonjol.\n\nTim kami terdiri dari para profesional di bidang HR, desain, dan teknologi, yang berkolaborasi untuk memberikan pengalaman terbaik bagi pengguna kami.",
   imageUrl: "https://placehold.co/800x400.png",
   imageAlt: "Our Team",
   dataAiHint: "team collaboration",
@@ -18,6 +18,13 @@ async function fetchAboutUsData(): Promise<AboutUsContentValues> {
   try {
     const data = await getTentangKami();
     if (data && data.title && data.content) { // Basic check for essential fields
+      // If data is fetched, ensure title is updated if it still contains old name
+      if (data.title === "Tentang ResumeForge") {
+        data.title = defaultAboutUsContent.title;
+      }
+      if (data.content.startsWith("ResumeForge adalah")) {
+         data.content = defaultAboutUsContent.content;
+      }
       return data;
     }
     return defaultAboutUsContent; // Return default if data is incomplete or not found

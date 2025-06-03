@@ -14,7 +14,7 @@ import { FooterContentSchema, type FooterContentValues } from "@/lib/schema";
 import { getFooterContent, updateFooterContent } from "@/services/firestoreService";
 
 const defaultFooterValues: FooterContentValues = {
-  text: `© ${new Date().getFullYear()} ResumeForge. All rights reserved.`,
+  text: `© ${new Date().getFullYear()} CVBeres.id. All rights reserved.`,
 };
 
 export default function ManageFooterPage() {

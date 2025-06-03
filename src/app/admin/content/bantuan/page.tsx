@@ -17,7 +17,7 @@ import { Separator } from "@/components/ui/separator"; // Added import
 
 const defaultFaqItem = { question: "", answer: "" };
 const defaultBantuanValues: BantuanContentValues = {
-  mainTitle: "Pusat Bantuan ResumeForge",
+  mainTitle: "Pusat Bantuan CVBeres.id",
   introText: "Kami siap membantu Anda! Temukan jawaban atas pertanyaan umum di bawah ini, atau hubungi kami jika Anda memerlukan bantuan lebih lanjut.",
   faqTitle: "Pertanyaan Umum (FAQ)",
   faqs: [defaultFaqItem],
@@ -49,6 +49,10 @@ export default function ManageBantuanPage() {
       try {
         const data = await getBantuan();
         if (data) {
+          // Ensure title is updated if it still contains old name
+          if (data.mainTitle === "Pusat Bantuan ResumeForge") {
+            data.mainTitle = defaultBantuanValues.mainTitle;
+          }
           form.reset(data);
         } else {
           // If no data in Firestore, set default values which might trigger an initial save

@@ -30,7 +30,7 @@ export default async function BlogPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-4xl font-bold text-primary">Blog ResumeForge</h1>
+      <h1 className="text-4xl font-bold text-primary">Blog CVBeres.id</h1>
       <p className="text-lg text-muted-foreground">
         Temukan tips, trik, dan wawasan terbaru seputar penulisan resume dan pengembangan karir.
       </p>

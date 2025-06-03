@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'ResumeForge',
+  title: 'CVBeres.id',
   description: 'Craft your professional resume with ease.',
 };
 

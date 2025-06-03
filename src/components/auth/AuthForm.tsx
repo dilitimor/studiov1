@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,9 +29,10 @@ interface AuthFormProps {
   mode: "login" | "signup";
   onSubmit: (values: AuthFormValues) => Promise<void>;
   loading: boolean;
+  authFormTitle?: string; // Optional title override
 }
 
-export default function AuthForm({ mode, onSubmit, loading }: AuthFormProps) {
+export default function AuthForm({ mode, onSubmit, loading, authFormTitle }: AuthFormProps) {
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -39,7 +41,7 @@ export default function AuthForm({ mode, onSubmit, loading }: AuthFormProps) {
     },
   });
 
-  const title = mode === "login" ? "Login to ResumeForge" : "Sign Up for ResumeForge";
+  const title = authFormTitle ? authFormTitle : (mode === "login" ? "Login to CVBeres.id" : "Sign Up for CVBeres.id");
   const description = mode === "login" 
     ? "Enter your credentials to access your account." 
     : "Create an account to start building your resume.";

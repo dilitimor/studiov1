@@ -14,15 +14,20 @@ export default function Footer() {
       try {
         const data = await getFooterContent();
         if (data && data.text) {
-          setFooterText(data.text);
+          // Check if the fetched text needs updating from old name
+          if (data.text.includes("ResumeForge")) {
+            setFooterText(`© ${new Date().getFullYear()} CVBeres.id. All rights reserved.`);
+          } else {
+            setFooterText(data.text);
+          }
         } else {
           // Fallback if no data is found or text is empty
-          setFooterText(`© ${new Date().getFullYear()} ResumeForge. All rights reserved.`);
+          setFooterText(`© ${new Date().getFullYear()} CVBeres.id. All rights reserved.`);
         }
       } catch (error) {
         console.error("Failed to fetch footer content:", error);
         // Fallback on error
-        setFooterText(`© ${new Date().getFullYear()} ResumeForge. All rights reserved.`);
+        setFooterText(`© ${new Date().getFullYear()} CVBeres.id. All rights reserved.`);
       } finally {
         setIsLoading(false);
       }

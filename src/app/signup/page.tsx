@@ -1,3 +1,4 @@
+
 "use client";
 
 import AuthForm from "@/components/auth/AuthForm";
@@ -35,7 +36,7 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await createUserWithEmailAndPassword(auth, values.email, values.password);
-      toast({ title: "Signup Successful", description: "Welcome to ResumeForge!" });
+      toast({ title: "Signup Successful", description: "Welcome to CVBeres.id!" });
       // router.push("/resume"); // Navigation is handled by useEffect after user state updates
     } catch (error: any) {
       console.error("Signup error:", error);

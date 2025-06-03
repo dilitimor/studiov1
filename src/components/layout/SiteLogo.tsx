@@ -8,7 +8,7 @@ import { getLogo } from '@/services/firestoreService';
 import type { LogoValues } from '@/lib/schema';
 import NextImage from 'next/image'; // Using NextImage for optimized image handling
 
-const siteName = "ResumeForge";
+const siteName = "CVBeres.id";
 
 export default function SiteLogo() {
   const [logoDataUri, setLogoDataUri] = useState<string | null>(null);

@@ -13,7 +13,7 @@ export default function HomePage() {
         <div className="p-4 sm:p-6 md:p-8 h-full overflow-y-auto">
           <div className="flex flex-col items-center justify-center text-center py-12">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-              Welcome to <span className="text-primary">ResumeForge</span>
+              Welcome to <span className="text-primary">CVBeres.id</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10">
               Craft your perfect professional resume effortlessly. Our step-by-step builder and AI-powered tools will help you stand out.

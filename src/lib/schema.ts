@@ -134,13 +134,13 @@ export interface ResumeDocument extends FullResumeValues {
 
 // CMS Schemas
 export const LogoSchema = z.object({
-  dataUri: z.string().optional().nullable(), // Changed from url to dataUri, allows empty/null
+  dataUri: z.string().optional().nullable(),
 });
 export type LogoValues = z.infer<typeof LogoSchema>;
 
 export const AboutUsContentSchema = z.object({
-  title: z.string().min(1, "Judul tidak boleh kosong"),
-  content: z.string().min(1, "Konten tidak boleh kosong"),
+  title: z.string().min(1, "Judul tidak boleh kosong").default("Tentang CVBeres.id"),
+  content: z.string().min(1, "Konten tidak boleh kosong").default("CVBeres.id adalah platform inovatif yang dirancang untuk membantu Anda membuat resume profesional dengan mudah dan cepat. Kami percaya bahwa setiap orang berhak mendapatkan kesempatan terbaik dalam karir mereka, dan resume yang kuat adalah langkah pertama menuju kesuksesan.\n\nMisi kami adalah memberdayakan pencari kerja dengan alat yang canggih namun intuitif, menggabungkan desain modern dengan teknologi AI terkini untuk menghasilkan resume yang menonjol.\n\nTim kami terdiri dari para profesional di bidang HR, desain, dan teknologi, yang berkolaborasi untuk memberikan pengalaman terbaik bagi pengguna kami."),
   imageUrl: z.string().url("URL gambar tidak valid").or(z.literal("")).optional(),
   imageAlt: z.string().optional(),
   dataAiHint: z.string().max(40, "Petunjuk AI maksimal 2 kata, dipisah spasi").optional(),
@@ -149,7 +149,7 @@ export type AboutUsContentValues = z.infer<typeof AboutUsContentSchema>;
 
 
 export const BantuanContentSchema = z.object({
-  mainTitle: z.string().min(1, "Judul utama tidak boleh kosong.").default("Pusat Bantuan ResumeForge"),
+  mainTitle: z.string().min(1, "Judul utama tidak boleh kosong.").default("Pusat Bantuan CVBeres.id"),
   introText: z.string().min(1, "Teks perkenalan tidak boleh kosong.").default("Kami siap membantu Anda! Temukan jawaban atas pertanyaan umum di bawah ini, atau hubungi kami jika Anda memerlukan bantuan lebih lanjut."),
   faqTitle: z.string().min(1, "Judul FAQ tidak boleh kosong.").default("Pertanyaan Umum (FAQ)"),
   faqs: z.array(z.object({
@@ -183,7 +183,7 @@ export interface BlogPostDocument extends BlogPostValues {
 }
 
 export const FooterContentSchema = z.object({
-  text: z.string().min(1, "Teks footer tidak boleh kosong"),
+  text: z.string().min(1, "Teks footer tidak boleh kosong").default(`© ${new Date().getFullYear()} CVBeres.id. All rights reserved.`),
 });
 export type FooterContentValues = z.infer<typeof FooterContentSchema>;
 
