@@ -1,12 +1,10 @@
 
-import { db, auth, storage } from '@/config/firebase'; // Added storage
+import { db, auth } from '@/config/firebase'; // Removed storage import as it's not used for AI templates anymore
 import {
   doc, getDoc, setDoc, collection, getDocs, deleteDoc, serverTimestamp,
-  updateDoc, query, orderBy, where, limit, addDoc, writeBatch
+  updateDoc, query, orderBy, where, limit, addDoc
 } from 'firebase/firestore';
-import { 
-  ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject 
-} from "firebase/storage"; // Added storage imports
+// Removed Firebase Storage imports as they are no longer used for AI templates
 import type {
   LogoValues, BlogPostValues, BlogPostDocument, FooterContentValues, AboutUsContentValues,
   BantuanContentValues, FullResumeValues, ResumeDocument,
@@ -17,7 +15,7 @@ const CMS_COLLECTION = 'cms_content';
 const BLOG_POSTS_COLLECTION = 'blog_posts';
 const USER_RESUMES_COLLECTION_GROUP = 'resumes'; 
 const AI_RESUME_TEMPLATES_COLLECTION = 'ai_resume_templates';
-const AI_TEMPLATE_PDF_STORAGE_PATH = 'ai_template_pdfs';
+// const AI_TEMPLATE_PDF_STORAGE_PATH = 'ai_template_pdfs'; // No longer needed
 
 
 // Generic function to get CMS document
@@ -169,43 +167,6 @@ export async function deleteResume(userId: string, resumeId: string): Promise<vo
 
 
 // AI Resume Templates (Admin)
-const uploadFileToStorage = async (file: File, path: string): Promise<{ downloadURL: string, storagePath: string }> => {
-  const fileRef = storageRef(storage, path);
-  const uploadTask = uploadBytesResumable(fileRef, file);
-
-  return new Promise((resolve, reject) => {
-    uploadTask.on('state_changed',
-      (snapshot) => {
-        // Optional: handle progress
-        // const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        // console.log('Upload is ' + progress + '% done');
-      },
-      (error) => {
-        reject(error);
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        resolve({ downloadURL, storagePath: path });
-      }
-    );
-  });
-};
-
-const deleteFileFromStorage = async (path: string | null | undefined): Promise<void> => {
-  if (!path) return;
-  const fileRef = storageRef(storage, path);
-  try {
-    await deleteObject(fileRef);
-  } catch (error: any) {
-    // It's okay if the file doesn't exist (e.g., already deleted or path error)
-    if (error.code !== 'storage/object-not-found') {
-      console.error("Error deleting file from storage:", error);
-      // Decide if you want to re-throw or just log
-    }
-  }
-};
-
-
 export async function getAiResumeTemplates(): Promise<AiResumeTemplateDocument[]> {
   const q = query(collection(db, AI_RESUME_TEMPLATES_COLLECTION), orderBy('createdAt', 'desc'));
   const querySnapshot = await getDocs(q);
@@ -224,63 +185,39 @@ export async function getAiResumeTemplate(id: string): Promise<AiResumeTemplateD
   return null;
 }
 
-export async function addAiResumeTemplate(data: AiResumeTemplateValues, file?: File): Promise<string> {
+// Note: The 'file' parameter is no longer used for direct upload to storage.
+// The caller should convert the file to a Data URI and pass it in 'data.contentPdfDataUri'.
+export async function addAiResumeTemplate(data: AiResumeTemplateValues): Promise<string> {
   const { id: RHFId, ...templateData } = data;
   
-  let fileDetails: { contentUrl: string | null, contentFileName: string | null, contentStoragePath: string | null } = {
-    contentUrl: null,
-    contentFileName: null,
-    contentStoragePath: null,
-  };
-
-  const docRef = doc(collection(db, AI_RESUME_TEMPLATES_COLLECTION)); // Create ref to get ID first
-
-  if (file) {
-    const filePath = `${AI_TEMPLATE_PDF_STORAGE_PATH}/${docRef.id}/${file.name}`;
-    const { downloadURL, storagePath } = await uploadFileToStorage(file, filePath);
-    fileDetails = { contentUrl: downloadURL, contentFileName: file.name, contentStoragePath: storagePath };
-  }
-
   const newTemplateData = {
-    ...templateData,
-    ...fileDetails,
+    ...templateData, // This should include contentPdfDataUri and contentPdfFileName if provided
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
   
-  await setDoc(docRef, newTemplateData); // Use setDoc with the pre-generated ref
+  const docRef = await addDoc(collection(db, AI_RESUME_TEMPLATES_COLLECTION), newTemplateData);
   return docRef.id;
 }
 
+// Note: The 'file' parameter is no longer used for direct upload to storage.
+// The caller should convert the file to a Data URI and pass it in 'data.contentPdfDataUri'.
 export async function updateAiResumeTemplate(
   id: string, 
-  data: Partial<AiResumeTemplateValues>, 
-  file?: File,
-  currentStoragePath?: string | null
+  data: Partial<AiResumeTemplateValues>
 ): Promise<void> {
   const { id: RHFId, ...templateData } = data;
   const docRef = doc(db, AI_RESUME_TEMPLATES_COLLECTION, id);
   
-  let dataToUpdate: Partial<AiResumeTemplateValues> = { ...templateData };
-
-  if (file) { // New file uploaded or replacing existing
-    if (currentStoragePath) {
-      await deleteFileFromStorage(currentStoragePath);
-    }
-    const filePath = `${AI_TEMPLATE_PDF_STORAGE_PATH}/${id}/${file.name}`;
-    const { downloadURL, storagePath: newStoragePath } = await uploadFileToStorage(file, filePath);
-    dataToUpdate.contentUrl = downloadURL;
-    dataToUpdate.contentFileName = file.name;
-    dataToUpdate.contentStoragePath = newStoragePath;
-  } else if (data.contentUrl === null) { // Explicitly removing file (contentUrl set to null by form)
-     if (currentStoragePath) {
-      await deleteFileFromStorage(currentStoragePath);
-    }
-    dataToUpdate.contentUrl = null;
-    dataToUpdate.contentFileName = null;
-    dataToUpdate.contentStoragePath = null;
+  // If contentPdfDataUri is explicitly set to null, it means remove the PDF.
+  // If it contains a new Data URI, it means replace/add.
+  // If it's undefined in `data`, it means don't change the existing PDF data.
+  const dataToUpdate: Partial<AiResumeTemplateValues> = { ...templateData };
+  if (data.contentPdfDataUri === null) {
+    dataToUpdate.contentPdfDataUri = null;
+    dataToUpdate.contentPdfFileName = null;
   }
-  // If no new file and contentUrl is not set to null, existing file details remain unchanged.
+
 
   await updateDoc(docRef, {
     ...dataToUpdate,
@@ -290,13 +227,7 @@ export async function updateAiResumeTemplate(
 
 export async function deleteAiResumeTemplate(id: string): Promise<void> {
   const docRef = doc(db, AI_RESUME_TEMPLATES_COLLECTION, id);
-  const templateDoc = await getDoc(docRef);
-  if (templateDoc.exists()) {
-    const data = templateDoc.data() as AiResumeTemplateDocument;
-    if (data.contentStoragePath) {
-      await deleteFileFromStorage(data.contentStoragePath);
-    }
-  }
+  // No need to delete from storage as it's stored in Firestore.
   await deleteDoc(docRef);
 }
     

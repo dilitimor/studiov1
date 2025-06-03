@@ -192,10 +192,8 @@ export const AiResumeTemplateSchema = z.object({
   id: z.string().optional(), 
   name: z.string().min(1, "Nama template wajib diisi"),
   description: z.string().min(1, "Deskripsi template wajib diisi"),
-  // content: z.string().min(1, "Konten template (atau URL) wajib diisi"), // Old field
-  contentUrl: z.string().url("URL konten PDF tidak valid").optional().nullable(),
-  contentFileName: z.string().optional().nullable(),
-  contentStoragePath: z.string().optional().nullable(),
+  contentPdfDataUri: z.string().optional().nullable(), // Stores PDF as base64 Data URI
+  contentPdfFileName: z.string().optional().nullable(), // Stores the original file name
   createdAt: z.any().optional(),
   updatedAt: z.any().optional(),
 });

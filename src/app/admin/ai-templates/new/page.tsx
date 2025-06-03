@@ -19,17 +19,16 @@ import Link from "next/link";
 const defaultValues: Partial<AiResumeTemplateValues> = {
   name: "",
   description: "",
-  contentUrl: undefined, // Use undefined for initial uncontrolled state or ''
-  contentFileName: undefined,
-  contentStoragePath: undefined,
+  contentPdfDataUri: undefined,
+  contentPdfFileName: undefined,
 };
 
 export default function NewAiTemplatePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [filePreviewName, setFilePreviewName] = useState<string | null>(null);
+  // No longer need selectedFile state, as we'll process to Data URI immediately
+  const [fileNameForDisplay, setFileNameForDisplay] = useState<string | null>(null);
 
 
   const form = useForm<AiResumeTemplateValues>({
@@ -43,42 +42,55 @@ export default function NewAiTemplatePage() {
     if (file) {
       if (file.type !== "application/pdf") {
         toast({ title: "Format File Salah", description: "Harap unggah file PDF.", variant: "destructive" });
-        setSelectedFile(null);
-        setFilePreviewName(null);
+        form.setValue('contentPdfDataUri', null);
+        form.setValue('contentPdfFileName', null);
+        setFileNameForDisplay(null);
         event.target.value = ''; 
         return;
       }
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast({ title: "Ukuran File Terlalu Besar", description: "Ukuran file PDF maksimal adalah 5MB.", variant: "destructive" });
-        setSelectedFile(null);
-        setFilePreviewName(null);
+      // Firestore 1MB limit on documents. Base64 is ~33% larger.
+      // So, raw file size limit should be around 700KB to be safe.
+      if (file.size > 700 * 1024) { 
+        toast({ title: "Ukuran File Terlalu Besar", description: "Ukuran file PDF maksimal adalah 700KB (karena disimpan di database).", variant: "destructive" });
+        form.setValue('contentPdfDataUri', null);
+        form.setValue('contentPdfFileName', null);
+        setFileNameForDisplay(null);
         event.target.value = '';
         return;
       }
-      setSelectedFile(file);
-      setFilePreviewName(file.name);
-      // form.setValue('contentUrl', 'file_placeholder'); // Temporary value for validation if field is required by schema
-    } else {
-      setSelectedFile(null);
-      setFilePreviewName(null);
-      // form.setValue('contentUrl', null);
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        form.setValue('contentPdfDataUri', reader.result as string, { shouldValidate: true });
+        form.setValue('contentPdfFileName', file.name, { shouldValidate: true });
+        setFileNameForDisplay(file.name);
+      };
+      reader.onerror = () => {
+        toast({ title: "Error Baca File", description: "Gagal membaca file PDF.", variant: "destructive" });
+        form.setValue('contentPdfDataUri', null);
+        form.setValue('contentPdfFileName', null);
+        setFileNameForDisplay(null);
+      }
+      reader.readAsDataURL(file);
+
+    } else { // User cancelled file dialog
+      // Do nothing, keep existing values if any
     }
   };
 
   const removeSelectedFile = () => {
-    setSelectedFile(null);
-    setFilePreviewName(null);
+    form.setValue('contentPdfDataUri', null, { shouldValidate: true });
+    form.setValue('contentPdfFileName', null, { shouldValidate: true });
+    setFileNameForDisplay(null);
     const fileInput = document.getElementById('pdf-upload') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
-     form.setValue('contentUrl', null);
-     form.setValue('contentFileName', null);
-     form.setValue('contentStoragePath', null);
   }
 
   const onSubmit = async (values: AiResumeTemplateValues) => {
     setIsLoading(true);
     try {
-      await addAiResumeTemplate(values, selectedFile || undefined);
+      // The values object already contains contentPdfDataUri and contentPdfFileName from the form
+      await addAiResumeTemplate(values);
       toast({ title: "Sukses", description: "Template AI baru berhasil ditambahkan." });
       router.push("/admin/ai-templates");
     } catch (error: any) {
@@ -101,7 +113,7 @@ export default function NewAiTemplatePage() {
                 </Link>
             </Button>
         </div>
-        <CardDescription>Isi formulir di bawah untuk membuat template AI baru.</CardDescription>
+        <CardDescription>Isi formulir di bawah untuk membuat template AI baru. PDF akan disimpan langsung di database (maks 700KB).</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -121,7 +133,7 @@ export default function NewAiTemplatePage() {
             )}/>
             
             <FormItem>
-                <FormLabel htmlFor="pdf-upload">Template PDF (maks. 5MB)</FormLabel>
+                <FormLabel htmlFor="pdf-upload">Template PDF (maks. 700KB)</FormLabel>
                 <div className="flex items-center gap-4">
                     <Input
                         id="pdf-upload"
@@ -133,21 +145,34 @@ export default function NewAiTemplatePage() {
                     <Button type="button" variant="outline" onClick={() => document.getElementById('pdf-upload')?.click()}>
                         <UploadCloud className="mr-2 h-4 w-4" /> Unggah PDF
                     </Button>
-                    {filePreviewName && (
+                    {fileNameForDisplay && (
                          <Button type="button" variant="ghost" size="sm" onClick={removeSelectedFile} className="text-destructive hover:bg-destructive/10">
                             <XCircle className="mr-1 h-4 w-4" /> Hapus Pilihan
                         </Button>
                     )}
                 </div>
-                {filePreviewName && (
+                {fileNameForDisplay && (
                     <div className="mt-2 p-2 border rounded-md bg-muted text-sm flex items-center gap-2">
                         <FileText className="h-5 w-5 text-primary" />
-                        <span>{filePreviewName}</span>
+                        <span>{fileNameForDisplay}</span>
                     </div>
                 )}
+                {/* Hidden input for react-hook-form to track contentPdfDataUri */}
                 <FormField 
                   control={form.control} 
-                  name="contentUrl" 
+                  name="contentPdfDataUri" 
+                  render={({ field }) => (
+                    <Input 
+                      {...field} 
+                      value={field.value === null ? '' : field.value || ''} 
+                      type="hidden" 
+                    />
+                  )} 
+                />
+                 {/* Hidden input for react-hook-form to track contentPdfFileName */}
+                <FormField 
+                  control={form.control} 
+                  name="contentPdfFileName" 
                   render={({ field }) => (
                     <Input 
                       {...field} 

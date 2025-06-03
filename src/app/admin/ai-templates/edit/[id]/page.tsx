@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Loader2, ArrowLeft, Sparkles, UploadCloud, FileText, XCircle, Download } from "lucide-react";
 import { AiResumeTemplateSchema, type AiResumeTemplateValues } from "@/lib/schema";
-import { getAiResumeTemplate, updateAiResumeTemplate, type AiResumeTemplateDocument } from "@/services/firestoreService";
+import { getAiResumeTemplate, updateAiResumeTemplate } from "@/services/firestoreService";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 
@@ -25,22 +25,24 @@ export default function EditAiTemplatePage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [currentPdfInfo, setCurrentPdfInfo] = useState<{ name: string | null, url: string | null, storagePath: string | null }>({ name: null, url: null, storagePath: null });
-  const [fileMarkedForRemoval, setFileMarkedForRemoval] = useState(false);
-
+  // fileNameForDisplay will hold the name of the currently selected or existing file for UI.
+  const [fileNameForDisplay, setFileNameForDisplay] = useState<string | null>(null);
+  // No longer need selectedFile, currentPdfInfo, or fileMarkedForRemoval in the same way.
+  // We will rely on form state (contentPdfDataUri, contentPdfFileName)
 
   const form = useForm<AiResumeTemplateValues>({
     resolver: zodResolver(AiResumeTemplateSchema),
     defaultValues: {
       name: "",
       description: "",
-      contentUrl: undefined, 
-      contentFileName: undefined,
-      contentStoragePath: undefined,
+      contentPdfDataUri: undefined,
+      contentPdfFileName: undefined,
     },
     mode: "onChange",
   });
+
+  const watchedPdfDataUri = form.watch('contentPdfDataUri');
+  const watchedPdfFileName = form.watch('contentPdfFileName');
 
   useEffect(() => {
     if (!templateId) {
@@ -54,23 +56,13 @@ export default function EditAiTemplatePage() {
       try {
         const templateData = await getAiResumeTemplate(templateId as string);
         if (templateData) {
-          const resetData = {
-            ...templateData,
-            contentUrl: templateData.contentUrl || undefined,
-            contentFileName: templateData.contentFileName || undefined,
-            contentStoragePath: templateData.contentStoragePath || undefined,
-          };
-          form.reset(resetData as AiResumeTemplateValues);
-
-          if (templateData.contentUrl && templateData.contentFileName) {
-            setCurrentPdfInfo({ 
-              name: templateData.contentFileName, 
-              url: templateData.contentUrl,
-              storagePath: templateData.contentStoragePath || null
-            });
-          } else {
-            setCurrentPdfInfo({ name: null, url: null, storagePath: null });
-          }
+          form.reset({
+            name: templateData.name || "",
+            description: templateData.description || "",
+            contentPdfDataUri: templateData.contentPdfDataUri || undefined,
+            contentPdfFileName: templateData.contentPdfFileName || undefined,
+          });
+          setFileNameForDisplay(templateData.contentPdfFileName || null);
         } else {
           toast({ title: "Error", description: "Template AI tidak ditemukan.", variant: "destructive" });
           router.push("/admin/ai-templates");
@@ -89,71 +81,53 @@ export default function EditAiTemplatePage() {
     if (file) {
       if (file.type !== "application/pdf") {
         toast({ title: "Format File Salah", description: "Harap unggah file PDF.", variant: "destructive" });
-        setSelectedFile(null);
+        // Do not clear existing valid data if user selects wrong file type
         event.target.value = '';
         return;
       }
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast({ title: "Ukuran File Terlalu Besar", description: "Ukuran file PDF maksimal adalah 5MB.", variant: "destructive" });
-        setSelectedFile(null);
+      if (file.size > 700 * 1024) { // ~700KB limit for base64 in 1MB doc
+        toast({ title: "Ukuran File Terlalu Besar", description: "Ukuran file PDF maksimal adalah 700KB.", variant: "destructive" });
         event.target.value = '';
         return;
       }
-      setSelectedFile(file);
-      setCurrentPdfInfo(prev => ({ ...prev, name: file.name, url: null })); 
-      setFileMarkedForRemoval(false); 
-      form.setValue('contentUrl', undefined); 
-      form.setValue('contentFileName', undefined);
-      form.setValue('contentStoragePath', undefined);
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        form.setValue('contentPdfDataUri', reader.result as string, { shouldValidate: true });
+        form.setValue('contentPdfFileName', file.name, { shouldValidate: true });
+        setFileNameForDisplay(file.name); // Update display name immediately
+      };
+      reader.onerror = () => {
+         toast({ title: "Error Baca File", description: "Gagal membaca file PDF.", variant: "destructive" });
+      }
+      reader.readAsDataURL(file);
     }
   };
 
   const removeCurrentOrSelectedFile = () => {
-    setSelectedFile(null); 
-    setCurrentPdfInfo(prev => ({...prev, name: 'Akan dihapus saat disimpan', url: null, storagePath: prev.storagePath})); // Keep original storagePath in UI state for deletion reference
-    setFileMarkedForRemoval(true); 
-    form.setValue('contentUrl', null); 
-    form.setValue('contentFileName', null);
-    form.setValue('contentStoragePath', null); // This is important for the form state
+    form.setValue('contentPdfDataUri', null, { shouldValidate: true });
+    form.setValue('contentPdfFileName', null, { shouldValidate: true });
+    setFileNameForDisplay(null); // Clear display name
     const fileInput = document.getElementById('pdf-upload-edit') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
   };
-
 
   const onSubmit = async (values: AiResumeTemplateValues) => {
     if (!templateId) return;
     setIsLoading(true);
 
-    // Base data to update (non-file fields)
+    // Values already contain contentPdfDataUri and contentPdfFileName
+    // If they are null, it means the file was removed.
+    // If they have data, it's either existing or new.
     const dataToUpdate: Partial<AiResumeTemplateValues> = {
         name: values.name,
         description: values.description,
+        contentPdfDataUri: values.contentPdfDataUri, 
+        contentPdfFileName: values.contentPdfFileName,
     };
 
-    // This will be passed to the service function for deleting the *actual file* from storage if needed
-    const originalStoragePathForDeletion = currentPdfInfo.storagePath;
-
-
-    if (selectedFile) {
-        // New file selected. Service function will handle upload and update file metadata.
-        // No need to set contentUrl/FileName/StoragePath in dataToUpdate here.
-    } else if (fileMarkedForRemoval) {
-        // File explicitly marked for removal, and no new file selected.
-        // Set Firestore fields to null.
-        dataToUpdate.contentUrl = null;
-        dataToUpdate.contentFileName = null;
-        dataToUpdate.contentStoragePath = null;
-    } else {
-        // No new file, not marked for removal: means we want to keep the existing file details.
-        // These values come from the form's current state (after initial load or if unchanged).
-        dataToUpdate.contentUrl = values.contentUrl;
-        dataToUpdate.contentFileName = values.contentFileName;
-        dataToUpdate.contentStoragePath = values.contentStoragePath;
-    }
-
     try {
-      // Pass `originalStoragePathForDeletion` for the service to use if it needs to delete from storage.
-      await updateAiResumeTemplate(templateId, dataToUpdate, selectedFile || undefined, originalStoragePathForDeletion);
+      await updateAiResumeTemplate(templateId, dataToUpdate);
       toast({ title: "Sukses", description: "Template AI berhasil diperbarui." });
       router.push("/admin/ai-templates");
     } catch (error: any) {
@@ -185,7 +159,7 @@ export default function EditAiTemplatePage() {
                 </Link>
             </Button>
         </div>
-        <CardDescription>Perbarui detail template AI di bawah ini.</CardDescription>
+        <CardDescription>Perbarui detail template AI di bawah ini. PDF akan disimpan langsung di database (maks 700KB).</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -204,33 +178,26 @@ export default function EditAiTemplatePage() {
             )}/>
             
             <FormItem>
-                <FormLabel htmlFor="pdf-upload-edit">Template PDF (maks. 5MB)</FormLabel>
-                {/* Display current file if it exists, no new file selected, and not marked for removal */}
-                {currentPdfInfo.url && currentPdfInfo.name && !selectedFile && !fileMarkedForRemoval && (
+                <FormLabel htmlFor="pdf-upload-edit">Template PDF (maks. 700KB)</FormLabel>
+                {/* Display current file info if a file name exists in form state */}
+                {watchedPdfFileName && (
                     <div className="my-2 p-3 border rounded-md bg-muted text-sm">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <FileText className="h-5 w-5 text-primary" />
-                                <span>File Saat Ini: {currentPdfInfo.name}</span>
+                                <span>File Saat Ini: {watchedPdfFileName}</span>
                             </div>
-                            <Link href={currentPdfInfo.url} target="_blank" rel="noopener noreferrer" passHref>
-                                <Button variant="outline" size="sm"><Download className="mr-1 h-4 w-4"/> Lihat</Button>
-                            </Link>
+                            {watchedPdfDataUri && (
+                                <a href={watchedPdfDataUri} download={watchedPdfFileName || 'template.pdf'}>
+                                    <Button variant="outline" size="sm"><Download className="mr-1 h-4 w-4"/> Unduh/Lihat</Button>
+                                </a>
+                            )}
                         </div>
                     </div>
                 )}
-                {/* Display newly selected file */}
-                 {selectedFile && (
-                     <div className="my-2 p-3 border rounded-md bg-muted text-sm flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-green-600" />
-                        <span>File Baru: {selectedFile.name}</span>
-                    </div>
-                )}
-                {/* Display message if file is marked for removal */}
-                {fileMarkedForRemoval && !selectedFile && (
-                    <div className="my-2 p-3 border rounded-md bg-destructive/10 text-destructive text-sm flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        <span>File saat ini akan dihapus setelah disimpan.</span>
+                 {!watchedPdfFileName && !isFetching && (
+                    <div className="my-2 p-3 border rounded-md bg-muted/50 text-sm text-muted-foreground">
+                        Tidak ada file PDF yang terunggah untuk template ini.
                     </div>
                 )}
 
@@ -243,29 +210,23 @@ export default function EditAiTemplatePage() {
                         className="hidden"
                     />
                     <Button type="button" variant="outline" onClick={() => document.getElementById('pdf-upload-edit')?.click()}>
-                        <UploadCloud className="mr-2 h-4 w-4" /> {currentPdfInfo.name && !selectedFile && !fileMarkedForRemoval ? 'Ganti PDF' : 'Unggah PDF Baru'}
+                        <UploadCloud className="mr-2 h-4 w-4" /> {watchedPdfFileName ? 'Ganti PDF' : 'Unggah PDF Baru'}
                     </Button>
-                    {/* Show remove button if there's a current file or a new file selected, and it's not already marked for removal */}
-                    {(currentPdfInfo.url || selectedFile) && !fileMarkedForRemoval && (
+                    {watchedPdfFileName && (
                          <Button type="button" variant="destructive" size="sm" onClick={removeCurrentOrSelectedFile}>
                             <XCircle className="mr-1 h-4 w-4" /> Hapus PDF
                         </Button>
                     )}
                 </div>
-                {/* Hidden inputs for react-hook-form to track these values if needed, though service primarily drives them now */}
+                {/* Hidden inputs for react-hook-form to track these values */}
                 <FormField 
                   control={form.control} 
-                  name="contentUrl" 
+                  name="contentPdfDataUri" 
                   render={({ field }) => <Input {...field} value={field.value === null ? '' : field.value || ''} type="hidden" />} 
                 />
                  <FormField 
                   control={form.control} 
-                  name="contentFileName" 
-                  render={({ field }) => <Input {...field} value={field.value === null ? '' : field.value || ''} type="hidden" />} 
-                />
-                 <FormField 
-                  control={form.control} 
-                  name="contentStoragePath" 
+                  name="contentPdfFileName" 
                   render={({ field }) => <Input {...field} value={field.value === null ? '' : field.value || ''} type="hidden" />} 
                 />
                 <FormMessage /> {/* For errors related to the conceptual "file" field */}
@@ -281,5 +242,4 @@ export default function EditAiTemplatePage() {
     </Card>
   );
 }
-
 
