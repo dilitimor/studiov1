@@ -9,12 +9,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { Loader2, FileCheck2, Users, BarChart3, Palette } from 'lucide-react'; // Added icons
+import { Loader2, FileCheck2, Palette, GraduationCap, Briefcase, Repeat } from 'lucide-react'; // Added new icons
 
 const resumeTypes = [
-  { id: 'profile', label: 'Resume Profil', description: 'Fokus pada ringkasan kualifikasi dan keahlian utama Anda.', icon: <Users className="h-5 w-5" /> },
-  { id: 'chronological', label: 'Resume Kronologis', description: 'Menyoroti riwayat kerja Anda secara berurutan.', icon: <FileCheck2 className="h-5 w-5" /> },
-  { id: 'infographic', label: 'Resume Infografis', description: 'Menyajikan informasi Anda secara visual dan menarik (fitur lanjutan).', icon: <BarChart3 className="h-5 w-5" /> },
+  { id: 'lulusan_baru', label: 'Lulusan Baru', description: 'Ideal untuk Anda yang baru lulus dan ingin menonjolkan potensi serta pendidikan.', icon: <GraduationCap className="h-5 w-5" /> },
+  { id: 'profesional', label: 'Profesional', description: 'Dirancang untuk profesional berpengalaman yang ingin menunjukkan pencapaian dan keahlian spesifik.', icon: <Briefcase className="h-5 w-5" /> },
+  { id: 'ganti_karier', label: 'Ganti Karier', description: 'Fokus pada transferable skills dan bagaimana pengalaman masa lalu relevan dengan jalur karier baru.', icon: <Repeat className="h-5 w-5" /> },
 ];
 
 export default function GenerateResumePage() {
@@ -51,10 +51,11 @@ export default function GenerateResumePage() {
       return;
     }
     // Placeholder for actual generation logic
-    console.log(`Generating resume ID: ${resumeId}, Type: ${selectedResumeType}`);
+    const selectedTypeLabel = resumeTypes.find(rt => rt.id === selectedResumeType)?.label || selectedResumeType;
+    console.log(`Generating resume ID: ${resumeId}, Type: ${selectedTypeLabel}`);
     toast({
       title: 'Proses Dimulai (Placeholder)',
-      description: `Resume ID: ${resumeId} dengan tipe ${selectedResumeType} akan segera digenerate. Fitur ini sedang dalam pengembangan.`,
+      description: `Resume ID: ${resumeId} dengan tipe "${selectedTypeLabel}" akan segera digenerate. Fitur ini sedang dalam pengembangan.`,
     });
     // Potentially redirect to a "processing" or "download" page in the future
     // router.push(`/resume/view/${resumeId}?type=${selectedResumeType}`);
@@ -91,10 +92,10 @@ export default function GenerateResumePage() {
             <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit mb-4">
                 <Palette className="h-10 w-10 text-primary" />
             </div>
-            <CardTitle className="text-3xl">Pilih Tampilan Resume Anda</CardTitle>
+            <CardTitle className="text-3xl">Pilih Tipe Resume Anda</CardTitle>
             <CardDescription className="text-lg">
               Resume Anda dengan ID: <span className="font-semibold text-primary">{resumeId}</span> telah disimpan.
-              Sekarang, pilih tipe tampilan yang Anda inginkan.
+              Sekarang, pilih tipe yang paling sesuai dengan tujuan Anda.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-8 pt-6">
@@ -140,3 +141,4 @@ export default function GenerateResumePage() {
     </ProtectedRoute>
   );
 }
+
