@@ -19,9 +19,9 @@ import Link from "next/link";
 const defaultValues: Partial<AiResumeTemplateValues> = {
   name: "",
   description: "",
-  contentUrl: null,
-  contentFileName: null,
-  contentStoragePath: null,
+  contentUrl: undefined, // Use undefined for initial uncontrolled state or ''
+  contentFileName: undefined,
+  contentStoragePath: undefined,
 };
 
 export default function NewAiTemplatePage() {
@@ -57,9 +57,11 @@ export default function NewAiTemplatePage() {
       }
       setSelectedFile(file);
       setFilePreviewName(file.name);
+      // form.setValue('contentUrl', 'file_placeholder'); // Temporary value for validation if field is required by schema
     } else {
       setSelectedFile(null);
       setFilePreviewName(null);
+      // form.setValue('contentUrl', null);
     }
   };
 
@@ -143,8 +145,17 @@ export default function NewAiTemplatePage() {
                         <span>{filePreviewName}</span>
                     </div>
                 )}
-                {/* Hidden fields for schema validation, not directly manipulated by user but by file selection logic */}
-                <FormField control={form.control} name="contentUrl" render={({ field }) => <Input {...field} type="hidden" />} />
+                <FormField 
+                  control={form.control} 
+                  name="contentUrl" 
+                  render={({ field }) => (
+                    <Input 
+                      {...field} 
+                      value={field.value === null ? '' : field.value || ''} 
+                      type="hidden" 
+                    />
+                  )} 
+                />
                 <FormMessage />
             </FormItem>
             

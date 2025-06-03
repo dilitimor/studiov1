@@ -35,9 +35,9 @@ export default function EditAiTemplatePage() {
     defaultValues: {
       name: "",
       description: "",
-      contentUrl: null,
-      contentFileName: null,
-      contentStoragePath: null,
+      contentUrl: undefined, // Use undefined for initial uncontrolled state or ''
+      contentFileName: undefined,
+      contentStoragePath: undefined,
     },
     mode: "onChange",
   });
@@ -54,7 +54,15 @@ export default function EditAiTemplatePage() {
       try {
         const templateData = await getAiResumeTemplate(templateId as string);
         if (templateData) {
-          form.reset(templateData as AiResumeTemplateValues);
+          // Ensure nullable fields are reset with '' or undefined for controlled inputs
+          const resetData = {
+            ...templateData,
+            contentUrl: templateData.contentUrl || undefined,
+            contentFileName: templateData.contentFileName || undefined,
+            contentStoragePath: templateData.contentStoragePath || undefined,
+          };
+          form.reset(resetData as AiResumeTemplateValues);
+
           if (templateData.contentUrl && templateData.contentFileName) {
             setCurrentPdfInfo({ 
               name: templateData.contentFileName, 
@@ -93,19 +101,18 @@ export default function EditAiTemplatePage() {
         return;
       }
       setSelectedFile(file);
-      setCurrentPdfInfo(prev => ({ ...prev, name: file.name, url: null })); // Preview new file name, clear old URL for display
-      setFileMarkedForRemoval(false); // If a new file is selected, it's not marked for removal
-      form.setValue('contentUrl', undefined); // Clear previous URL if new file is chosen
+      setCurrentPdfInfo(prev => ({ ...prev, name: file.name, url: null })); 
+      setFileMarkedForRemoval(false); 
+      form.setValue('contentUrl', undefined); 
     }
   };
 
   const removeCurrentOrSelectedFile = () => {
-    setSelectedFile(null); // Clear any newly selected file
-    setCurrentPdfInfo(prev => ({...prev, name: 'Akan dihapus saat disimpan', url: null})); // Update UI
-    setFileMarkedForRemoval(true); // Mark existing file for removal
-    form.setValue('contentUrl', null); // Signal to backend to remove
+    setSelectedFile(null); 
+    setCurrentPdfInfo(prev => ({...prev, name: 'Akan dihapus saat disimpan', url: null})); 
+    setFileMarkedForRemoval(true); 
+    form.setValue('contentUrl', null); 
     form.setValue('contentFileName', null);
-    // Keep contentStoragePath in form to allow backend to delete if needed
     const fileInput = document.getElementById('pdf-upload-edit') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
   };
@@ -120,20 +127,16 @@ export default function EditAiTemplatePage() {
         description: values.description,
     };
     
-    // If a new file is selected, it takes precedence.
-    // If no new file, but existing file is marked for removal, contentUrl will be null.
-    // If no new file and not marked for removal, existing file details (already in form values) are kept.
     if (fileMarkedForRemoval && !selectedFile) {
         dataToUpdate.contentUrl = null;
         dataToUpdate.contentFileName = null;
-        dataToUpdate.contentStoragePath = form.getValues('contentStoragePath'); // Keep path for deletion
+        dataToUpdate.contentStoragePath = form.getValues('contentStoragePath'); 
     } else if (!selectedFile && values.contentUrl) {
-        // No new file, keep existing file details if present
         dataToUpdate.contentUrl = values.contentUrl;
         dataToUpdate.contentFileName = values.contentFileName;
         dataToUpdate.contentStoragePath = values.contentStoragePath;
     }
-    // If selectedFile is present, the service function handles its upload and metadata.
+
 
     try {
       await updateAiResumeTemplate(templateId, dataToUpdate, selectedFile || undefined, form.getValues('contentStoragePath'));
@@ -231,8 +234,17 @@ export default function EditAiTemplatePage() {
                         </Button>
                     )}
                 </div>
-                 {/* Hidden fields for schema validation, managed by logic */}
-                <FormField control={form.control} name="contentUrl" render={({ field }) => <Input {...field} type="hidden" />} />
+                <FormField 
+                  control={form.control} 
+                  name="contentUrl" 
+                  render={({ field }) => (
+                    <Input 
+                      {...field} 
+                      value={field.value === null ? '' : field.value || ''} 
+                      type="hidden" 
+                    />
+                  )} 
+                />
                 <FormMessage />
             </FormItem>
 
